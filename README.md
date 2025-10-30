@@ -367,11 +367,14 @@ interface IAquaTakerCallback {
 
 ```bash
 # Clone repository
-git clone https://github.com/1inch/aqua-protocol
-cd aqua-protocol
+git clone https://github.com/1inch/aqua
+cd aqua
 
 # Install dependencies
 forge install
+
+# Build project
+forge build
 
 # Run tests
 forge test

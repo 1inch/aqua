@@ -2,7 +2,8 @@
 solc-version = "0.8.30"
 runs = 10_000_000
 via_ir = true
-libs = ["node_modules", "lib"]
+evm_version = "cancun"
+libs = ["lib"]
 
 [profile.solx]
 solc_version = "~/.local/bin/solx"
