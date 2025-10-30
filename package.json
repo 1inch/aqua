@@ -1,0 +1,25 @@
+{
+    "name": "@1inch/aqua",
+    "version": "1.0.0",
+    "description": "Shared liquidity layer protocol",
+    "main": "index.js",
+    "directories": {
+      "test": "test"
+    },
+    "scripts": {
+      "install": "forge install",
+      "build": "forge build",
+      "test": "forge test",
+      "snapshot": "forge snapshot --no-match-test \"testFuzz_*\""
+    },
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/1inch/aqua.git"
+    },
+    "author": "Degensoft Ltd.",
+    "license": "LicenseRef-Degensoft-ARSL-1.0-Audit",
+    "bugs": {
+      "url": "https://github.com/1inch/aqua/issues"
+    },
+    "homepage": "https://github.com/1inch/aqua#readme"
+  }
