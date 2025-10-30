@@ -38,8 +38,11 @@ jobs:
           git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf "git@github.com:"
           git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf "ssh://git@github.com/"
 
-      - name: Install node modules
-        run: npm install
+      - name: Install dependencies
+        run: forge install
+
+      - name: Build project
+        run: forge build
 
       - name: Check gas snapshots
         run: forge snapshot --check
