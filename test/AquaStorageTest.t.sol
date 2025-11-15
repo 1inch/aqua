@@ -99,7 +99,7 @@ contract AquaStorageTest is Test {
         );
 
         (bytes32[] memory reads, bytes32[] memory writes) = vm.accesses(address(aqua));
-        StorageAccesses.assertEq(vm, 1, 1, reads, writes, "Ship 1 token");
+        StorageAccesses.assertEq(vm, 2, 2, reads, writes, "Ship 1 token");
     }
 
     function testShip2Tokens() public {
@@ -113,7 +113,7 @@ contract AquaStorageTest is Test {
         );
 
         (bytes32[] memory reads, bytes32[] memory writes) = vm.accesses(address(aqua));
-        StorageAccesses.assertEq(vm, 2, 2, reads, writes, "Ship 2 tokens");
+        StorageAccesses.assertEq(vm, 3, 3, reads, writes, "Ship 2 tokens");
     }
 
     function testShip3Tokens() public {
@@ -127,7 +127,7 @@ contract AquaStorageTest is Test {
         );
 
         (bytes32[] memory reads, bytes32[] memory writes) = vm.accesses(address(aqua));
-        StorageAccesses.assertEq(vm, 3, 3, reads, writes, "Ship 3 tokens");
+        StorageAccesses.assertEq(vm, 4, 4, reads, writes, "Ship 3 tokens");
     }
 
     // ========== DOCK STORAGE TESTS ==========
@@ -152,7 +152,7 @@ contract AquaStorageTest is Test {
         );
 
         (bytes32[] memory reads, bytes32[] memory writes) = vm.accesses(address(aqua));
-        StorageAccesses.assertEq(vm, 1, 1, reads, writes, "Dock 1 token");
+        StorageAccesses.assertEq(vm, 2, 2, reads, writes, "Dock 1 token");
     }
 
     function testDock2Tokens() public {
@@ -175,7 +175,7 @@ contract AquaStorageTest is Test {
         );
 
         (bytes32[] memory reads, bytes32[] memory writes) = vm.accesses(address(aqua));
-        StorageAccesses.assertEq(vm, 2, 2, reads, writes, "Dock 2 tokens");
+        StorageAccesses.assertEq(vm, 3, 3, reads, writes, "Dock 2 tokens");
     }
 
     function testDock3Tokens() public {
@@ -198,6 +198,6 @@ contract AquaStorageTest is Test {
         );
 
         (bytes32[] memory reads, bytes32[] memory writes) = vm.accesses(address(aqua));
-        StorageAccesses.assertEq(vm, 3, 3, reads, writes, "Dock 3 tokens");
+        StorageAccesses.assertEq(vm, 4, 4, reads, writes, "Dock 3 tokens");
     }
 }

@@ -20,6 +20,7 @@ contract Aqua is IAqua, Context {
     error DockingShouldCloseAllTokens(address app, bytes32 strategyHash);
     error PushToNonActiveStrategyPrevented(address maker, address app, bytes32 strategyHash, address token);
     error SafeBalancesForTokenNotInActiveStrategy(address maker, address app, bytes32 strategyHash, address token);
+    error InvalidZeroAddressToken();
 
     uint8 private constant _DOCKED = 0xff;
 
@@ -48,8 +49,19 @@ contract Aqua is IAqua, Context {
         uint8 tokensCount = tokens.length.toUint8();
         require(tokensCount != _DOCKED, MaxNumberOfTokensExceeded(tokensCount, _DOCKED));
 
+        // Check if strategy already exists using address(0) as a flag
+        require(_balances[maker][app][strategyHash][address(0)].tokensCount == 0,
+                StrategiesMustBeImmutable(app, strategyHash));
+
         emit Shipped(maker, app, strategyHash, strategy);
+
+        // Store strategy existence flag in address(0)
+        _balances[maker][app][strategyHash][address(0)].store(0, tokensCount);
+
         for (uint256 i = 0; i < tokens.length; i++) {
+            // Check that token is not address(0)
+            require(tokens[i] != address(0), InvalidZeroAddressToken());
+
             Balance storage balance = _balances[maker][app][strategyHash][tokens[i]];
             require(balance.tokensCount == 0, StrategiesMustBeImmutable(app, strategyHash));
             balance.store(amounts[i].toUint248(), tokensCount);
@@ -59,11 +71,22 @@ contract Aqua is IAqua, Context {
 
     function dock(address app, bytes32 strategyHash, address[] calldata tokens) external {
         address maker = _msgSender();
+
+        // Check and clear the strategy flag in address(0)
+        Balance storage strategyFlag = _balances[maker][app][strategyHash][address(0)];
+        require(strategyFlag.tokensCount == tokens.length, DockingShouldCloseAllTokens(app, strategyHash));
+
         for (uint256 i = 0; i < tokens.length; i++) {
+            // Check that token is not address(0)
+            require(tokens[i] != address(0), InvalidZeroAddressToken());
+
             Balance storage balance = _balances[maker][app][strategyHash][tokens[i]];
             require(balance.tokensCount == tokens.length, DockingShouldCloseAllTokens(app, strategyHash));
             balance.store(0, _DOCKED);
         }
+
+        // Clear the strategy flag after all tokens are validated
+        strategyFlag.store(0, _DOCKED);
         emit Docked(maker, app, strategyHash);
     }
 

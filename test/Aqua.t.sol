@@ -69,6 +69,59 @@ contract AquaTest is Test {
         );
     }
 
+    function testCannotAddTokensIncrementallyToStrategy() public {
+        // First ship with token1
+        vm.prank(maker);
+        aqua.ship(
+            app,
+            "incremental_strategy",
+            dynamic([address(token1)]),
+            dynamic([uint256(100e18)])
+        );
+
+        // Try to ship again with token2 to same strategy (should fail)
+        vm.prank(maker);
+        vm.expectRevert(abi.encodeWithSelector(Aqua.StrategiesMustBeImmutable.selector, app, keccak256("incremental_strategy")));
+        aqua.ship(
+            app,
+            "incremental_strategy",
+            dynamic([address(token2)]),
+            dynamic([uint256(200e18)])
+        );
+
+        // Try to ship again with token1 and token2 (should also fail)
+        vm.prank(maker);
+        vm.expectRevert(abi.encodeWithSelector(Aqua.StrategiesMustBeImmutable.selector, app, keccak256("incremental_strategy")));
+        aqua.ship(
+            app,
+            "incremental_strategy",
+            dynamic([address(token1), address(token2)]),
+            dynamic([uint256(100e18), uint256(200e18)])
+        );
+    }
+
+    function testCannotShipWithZeroAddressToken() public {
+        // Try to ship with address(0) as token
+        vm.prank(maker);
+        vm.expectRevert(abi.encodeWithSelector(Aqua.InvalidZeroAddressToken.selector));
+        aqua.ship(
+            app,
+            "zero_address_strategy",
+            dynamic([address(0)]),
+            dynamic([uint256(100e18)])
+        );
+
+        // Try to ship with address(0) among other tokens
+        vm.prank(maker);
+        vm.expectRevert(abi.encodeWithSelector(Aqua.InvalidZeroAddressToken.selector));
+        aqua.ship(
+            app,
+            "zero_address_strategy2",
+            dynamic([address(token1), address(0), address(token2)]),
+            dynamic([uint256(100e18), uint256(200e18), uint256(300e18)])
+        );
+    }
+
     function testShipCannotHaveDuplicateTokens() public {
         // The contract prevents duplicate tokens in the same ship call
         // because it checks tokensCount == 0 for each token
@@ -101,6 +154,44 @@ contract AquaTest is Test {
             app,
             keccak256("strategy2"),
             dynamic([address(token1)])
+        );
+    }
+
+    function testCannotDockWithZeroAddressToken() public {
+        // First ship a valid strategy with 2 tokens
+        vm.prank(maker);
+        aqua.ship(
+            app,
+            "dock_zero_strategy",
+            dynamic([address(token1), address(token2)]),
+            dynamic([uint256(100e18), uint256(200e18)])
+        );
+
+        // Try to dock with address(0) as one of the tokens
+        vm.prank(maker);
+        vm.expectRevert(abi.encodeWithSelector(Aqua.InvalidZeroAddressToken.selector));
+        aqua.dock(
+            app,
+            keccak256("dock_zero_strategy"),
+            dynamic([address(token1), address(0)])
+        );
+
+        // Ship another strategy with just 1 token for the second test
+        vm.prank(maker);
+        aqua.ship(
+            app,
+            "dock_zero_strategy2",
+            dynamic([address(token1)]),
+            dynamic([uint256(100e18)])
+        );
+
+        // Try to dock with only address(0)
+        vm.prank(maker);
+        vm.expectRevert(abi.encodeWithSelector(Aqua.InvalidZeroAddressToken.selector));
+        aqua.dock(
+            app,
+            keccak256("dock_zero_strategy2"),
+            dynamic([address(0)])
         );
     }
 
