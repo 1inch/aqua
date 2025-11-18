@@ -5,8 +5,15 @@ pragma solidity 0.8.30;
 /// @custom:copyright © 2025 Degensoft Ltd
 
 contract Multicall {
+    error MsgValueNotAllowedForMulticall();
+
     function multicall(bytes[] calldata data) external {
-        for (uint256 i = 0; i < data.length; i++) {
+        if (msg.value != 0 && data.length > 1) {
+            revert MsgValueNotAllowedForMulticall();
+        }
+
+        uint256 length = data.length;
+        for (uint256 i = 0; i < length;) {
             (bool success,) = address(this).delegatecall(data[i]);
             if (!success) {
                 assembly ("memory-safe") {
@@ -15,6 +22,8 @@ contract Multicall {
                     revert(ptr, returndatasize())
                 }
             }
+
+            unchecked { ++i; }
         }
     }
 }

@@ -21,6 +21,11 @@ contract Aqua is IAqua {
     error DockingShouldCloseAllTokens(address app, bytes32 strategyHash);
     error PushToNonActiveStrategyPrevented(address maker, address app, bytes32 strategyHash, address token);
     error SafeBalancesForTokenNotInActiveStrategy(address maker, address app, bytes32 strategyHash, address token);
+    error ArrayLengthMismatch();
+    error InvalidAddress();
+    error DuplicateToken();
+    error InsufficientBalance();
+    error InactiveStrategy();
 
     uint8 private constant _DOCKED = 0xff;
 
@@ -44,31 +49,53 @@ contract Aqua is IAqua {
     }
 
     function ship(address app, bytes calldata strategy, address[] calldata tokens, uint256[] calldata amounts) external returns(bytes32 strategyHash) {
+        require(app != address(0), InvalidAddress());
+        require(tokens.length == amounts.length, ArrayLengthMismatch());
+
         strategyHash = keccak256(strategy);
         uint8 tokensCount = tokens.length.toUint8();
         require(tokensCount != _DOCKED, MaxNumberOfTokensExceeded(tokensCount, _DOCKED));
 
         emit Shipped(msg.sender, app, strategyHash, strategy);
-        for (uint256 i = 0; i < tokens.length; i++) {
-            Balance storage balance = _balances[msg.sender][app][strategyHash][tokens[i]];
+        uint256 length = tokens.length;
+        for (uint256 i = 0; i < length;) {
+            address token = tokens[i];
+            require(token != address(0), InvalidAddress());
+
+            for (uint256 j = 0; j < i;) {
+                require(tokens[j] != token, DuplicateToken());
+                unchecked { ++j; }
+            }
+
+            Balance storage balance = _balances[msg.sender][app][strategyHash][token];
             require(balance.tokensCount == 0, StrategiesMustBeImmutable(app, strategyHash));
             balance.store(amounts[i].toUint248(), tokensCount);
-            emit Pushed(msg.sender, app, strategyHash, tokens[i], amounts[i]);
+            emit Pushed(msg.sender, app, strategyHash, token, amounts[i]);
+
+            unchecked { ++i; }
         }
     }
 
     function dock(address app, bytes32 strategyHash, address[] calldata tokens) external {
-        for (uint256 i = 0; i < tokens.length; i++) {
+        uint256 length = tokens.length;
+        for (uint256 i = 0; i < length;) {
             Balance storage balance = _balances[msg.sender][app][strategyHash][tokens[i]];
-            require(balance.tokensCount == tokens.length, DockingShouldCloseAllTokens(app, strategyHash));
+            require(balance.tokensCount == length, DockingShouldCloseAllTokens(app, strategyHash));
             balance.store(0, _DOCKED);
+
+            unchecked { ++i; }
         }
         emit Docked(msg.sender, app, strategyHash);
     }
 
     function pull(address maker, bytes32 strategyHash, address token, uint256 amount, address to) external {
+        require(maker != address(0) && to != address(0), InvalidAddress());
+
         Balance storage balance = _balances[maker][msg.sender][strategyHash][token];
         (uint248 prevBalance, uint8 tokensCount) = balance.load();
+        require(tokensCount > 0 && tokensCount != _DOCKED, InactiveStrategy());
+        require(amount <= prevBalance, InsufficientBalance());
+
         balance.store(prevBalance - amount.toUint248(), tokensCount);
 
         IERC20(token).safeTransferFrom(maker, to, amount);
@@ -76,6 +103,8 @@ contract Aqua is IAqua {
     }
 
     function push(address maker, address app, bytes32 strategyHash, address token, uint256 amount) external {
+        require(maker != address(0) && app != address(0), InvalidAddress());
+
         Balance storage balance = _balances[maker][app][strategyHash][token];
         (uint248 prevBalance, uint8 tokensCount) = balance.load();
         require(tokensCount > 0 && tokensCount != _DOCKED, PushToNonActiveStrategyPrevented(maker, app, strategyHash, token));

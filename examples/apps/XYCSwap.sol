@@ -57,13 +57,24 @@ contract XYCSwap is AquaApp {
         uint256 amountOutMin,
         address to,
         bytes calldata takerData
+    ) external returns (uint256 amountOut) {
+        bytes32 strategyHash = keccak256(abi.encode(strategy));
+        return _swapExactIn(strategy, strategyHash, zeroForOne, amountIn, amountOutMin, to, takerData);
+    }
+
+    function _swapExactIn(
+        Strategy calldata strategy,
+        bytes32 strategyHash,
+        bool zeroForOne,
+        uint256 amountIn,
+        uint256 amountOutMin,
+        address to,
+        bytes calldata takerData
     )
-        external
-        nonReentrantStrategy(keccak256(abi.encode(strategy)))
+        private
+        nonReentrantStrategy(strategyHash)
         returns (uint256 amountOut)
     {
-        bytes32 strategyHash = keccak256(abi.encode(strategy));
-
         (address tokenIn, address tokenOut, uint256 balanceIn, uint256 balanceOut) = _getInAndOut(strategy, strategyHash, zeroForOne);
         amountOut = _quoteExactIn(strategy, balanceIn, balanceOut, amountIn);
         require(amountOut >= amountOutMin, InsufficientOutputAmount(amountOut, amountOutMin));
@@ -80,13 +91,24 @@ contract XYCSwap is AquaApp {
         uint256 amountInMax,
         address to,
         bytes calldata takerData
+    ) external returns (uint256 amountIn) {
+        bytes32 strategyHash = keccak256(abi.encode(strategy));
+        return _swapExactOut(strategy, strategyHash, zeroForOne, amountOut, amountInMax, to, takerData);
+    }
+
+    function _swapExactOut(
+        Strategy calldata strategy,
+        bytes32 strategyHash,
+        bool zeroForOne,
+        uint256 amountOut,
+        uint256 amountInMax,
+        address to,
+        bytes calldata takerData
     )
-        external
-        nonReentrantStrategy(keccak256(abi.encode(strategy)))
+        private
+        nonReentrantStrategy(strategyHash)
         returns (uint256 amountIn)
     {
-        bytes32 strategyHash = keccak256(abi.encode(strategy));
-
         (address tokenIn, address tokenOut, uint256 balanceIn, uint256 balanceOut) = _getInAndOut(strategy, strategyHash, zeroForOne);
         amountIn = _quoteExactOut(strategy, balanceIn, balanceOut, amountOut);
         require(amountIn <= amountInMax, ExcessiveInputAmount(amountIn, amountInMax));
@@ -102,10 +124,8 @@ contract XYCSwap is AquaApp {
         uint256 balanceOut,
         uint256 amountIn
     ) internal view virtual returns (uint256 amountOut) {
-        // Use constant product formula (x*y=const) after fee deduction:
-        // balanceIn * balanceOut == (balanceIn + amountIn) * (balanceOut - amountOut)
         uint256 amountInWithFee = amountIn * (BPS_BASE - strategy.feeBps) / BPS_BASE;
-        amountOut = (amountInWithFee * balanceOut) / (balanceIn + amountInWithFee);
+        amountOut = Math.mulDiv(amountInWithFee, balanceOut, balanceIn + amountInWithFee);
     }
 
     function _quoteExactOut(
@@ -114,10 +134,8 @@ contract XYCSwap is AquaApp {
         uint256 balanceOut,
         uint256 amountOut
     ) internal view virtual returns (uint256 amountIn) {
-        // Use constant product formula (x*y=const) after fee deduction:
-        // balanceIn * balanceOut == (balanceIn + amountIn) * (balanceOut - amountOut)
         uint256 amountOutWithFee = amountOut * BPS_BASE / (BPS_BASE - strategy.feeBps);
-        amountIn = (balanceIn * amountOutWithFee).ceilDiv(balanceOut - amountOutWithFee);
+        amountIn = Math.mulDiv(balanceIn, amountOutWithFee, balanceOut - amountOutWithFee, Math.Rounding.Ceil);
     }
 
     function _getInAndOut(Strategy calldata strategy, bytes32 strategyHash, bool zeroForOne) private view returns (address tokenIn, address tokenOut, uint256 balanceIn, uint256 balanceOut) {
