@@ -10,7 +10,7 @@ pragma solidity ^0.8.0;
 interface IAqua {
     /// @notice Emitted when a new strategy is shipped (deployed) and initialized with balances
     /// @param maker The address of the maker shipping the strategy
-    /// @param app The strategy address being revoked
+    /// @param app The strategy address being shipped
     /// @param strategyHash The hash of the strategy being shipped
     /// @param strategy The strategy being shipped (abi enocoded)
     event Shipped(address maker, address app, bytes32 strategyHash, bytes strategy);
