@@ -18,7 +18,7 @@ library TransientLockLib {
 
     uint256 constant private _UNLOCKED = 0;
     uint256 constant private _LOCKED = 1;
-
+    
     function lock(TransientLock storage self) internal {
         require(self._raw.inc() == _LOCKED, UnexpectedLock());
     }
