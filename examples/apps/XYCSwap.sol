@@ -59,7 +59,7 @@ contract XYCSwap is AquaApp {
         bytes calldata takerData
     )
         external
-        nonReentrantStrategy(keccak256(abi.encode(strategy)))
+        nonReentrantStrategy(strategy.maker, keccak256(abi.encode(strategy)))
         returns (uint256 amountOut)
     {
         bytes32 strategyHash = keccak256(abi.encode(strategy));
@@ -82,7 +82,7 @@ contract XYCSwap is AquaApp {
         bytes calldata takerData
     )
         external
-        nonReentrantStrategy(keccak256(abi.encode(strategy)))
+        nonReentrantStrategy(strategy.maker, keccak256(abi.encode(strategy)))
         returns (uint256 amountIn)
     {
         bytes32 strategyHash = keccak256(abi.encode(strategy));

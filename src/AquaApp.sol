@@ -21,12 +21,12 @@ abstract contract AquaApp {
 
     IAqua public immutable AQUA;
 
-    mapping(bytes32 strategyHash => TransientLock) internal _reentrancyLocks;
+    mapping(address maker => mapping(bytes32 strategyHash => TransientLock)) internal _reentrancyLocks;
 
-    modifier nonReentrantStrategy(bytes32 strategyHash) {
-        _reentrancyLocks[strategyHash].lock();
+    modifier nonReentrantStrategy(address maker, bytes32 strategyHash) {
+        _reentrancyLocks[maker][strategyHash].lock();
         _;
-        _reentrancyLocks[strategyHash].unlock();
+        _reentrancyLocks[maker][strategyHash].unlock();
     }
 
     constructor(IAqua aqua) {
@@ -36,7 +36,7 @@ abstract contract AquaApp {
     /// @dev Use reentrancy protection when calling this function to prevent nested swaps
     function _safeCheckAquaPush(address maker, bytes32 strategyHash, address token, uint256 expectedBalance) internal view {
         // Check that the swap function is reentrancy protected to prevent nested swaps
-        require(_reentrancyLocks[strategyHash].isLocked(), MissingNonReentrantModifier());
+        require(_reentrancyLocks[maker][strategyHash].isLocked(), MissingNonReentrantModifier());
 
         (uint256 newBalance,) = AQUA.rawBalances(maker, address(this), strategyHash, token);
         require(newBalance >= expectedBalance, MissingTakerAquaPush(token, newBalance, expectedBalance));
