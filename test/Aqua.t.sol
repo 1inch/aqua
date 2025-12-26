@@ -8,6 +8,7 @@ import "forge-std/Test.sol";
 import { dynamic } from "./utils/Dynamic.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "src/Aqua.sol";
+import "src/interfaces/IAqua.sol";
 
 contract MockToken is ERC20 {
     constructor(string memory name) ERC20(name, "MOCK") {
@@ -62,7 +63,7 @@ contract AquaTest is Test {
 
         // Try to ship again with same strategy
         vm.prank(maker);
-        vm.expectRevert(abi.encodeWithSelector(Aqua.StrategiesMustBeImmutable.selector, app, keccak256("strategy1")));
+        vm.expectRevert(abi.encodeWithSelector(IAqua.StrategiesMustBeImmutable.selector, app, keccak256("strategy1")));
         aqua.ship(
             app,
             "strategy1",
@@ -75,7 +76,7 @@ contract AquaTest is Test {
         // The contract prevents duplicate tokens in the same ship call
         // because it checks tokensCount == 0 for each token
         vm.prank(maker);
-        vm.expectRevert(abi.encodeWithSelector(Aqua.StrategiesMustBeImmutable.selector, app, keccak256("strategy_dup")));
+        vm.expectRevert(abi.encodeWithSelector(IAqua.StrategiesMustBeImmutable.selector, app, keccak256("strategy_dup")));
         aqua.ship(
             app,
             "strategy_dup",
@@ -98,7 +99,7 @@ contract AquaTest is Test {
 
         // Try to dock with only 1 token
         vm.prank(maker);
-        vm.expectRevert(abi.encodeWithSelector(Aqua.DockingShouldCloseAllTokens.selector, app, keccak256("strategy2")));
+        vm.expectRevert(abi.encodeWithSelector(IAqua.DockingShouldCloseAllTokens.selector, app, keccak256("strategy2")));
         aqua.dock(
             app,
             keccak256("strategy2"),
@@ -118,7 +119,7 @@ contract AquaTest is Test {
 
         // Try to dock with different token
         vm.prank(maker);
-        vm.expectRevert(abi.encodeWithSelector(Aqua.DockingShouldCloseAllTokens.selector, app, keccak256("strategy3")));
+        vm.expectRevert(abi.encodeWithSelector(IAqua.DockingShouldCloseAllTokens.selector, app, keccak256("strategy3")));
         aqua.dock(
             app,
             keccak256("strategy3"),
@@ -138,7 +139,7 @@ contract AquaTest is Test {
 
         // Try to dock with 3 tokens
         vm.prank(maker);
-        vm.expectRevert(abi.encodeWithSelector(Aqua.DockingShouldCloseAllTokens.selector, app, keccak256("strategy4")));
+        vm.expectRevert(abi.encodeWithSelector(IAqua.DockingShouldCloseAllTokens.selector, app, keccak256("strategy4")));
         aqua.dock(
             app,
             keccak256("strategy4"),
@@ -151,7 +152,7 @@ contract AquaTest is Test {
     function testPushRequiresActiveStrategy() public {
         // Try to push without ship
         vm.prank(pusher);
-        vm.expectRevert(abi.encodeWithSelector(Aqua.PushToNonActiveStrategyPrevented.selector, maker, app, keccak256("nonexistent"), address(token1)));
+        vm.expectRevert(abi.encodeWithSelector(IAqua.PushToNonActiveStrategyPrevented.selector, maker, app, keccak256("nonexistent"), address(token1)));
         aqua.push(maker, app, keccak256("nonexistent"), address(token1), 100e18);
     }
 
@@ -174,7 +175,7 @@ contract AquaTest is Test {
 
         // Try to push after dock
         vm.prank(pusher);
-        vm.expectRevert(abi.encodeWithSelector(Aqua.PushToNonActiveStrategyPrevented.selector, maker, app, keccak256("strategy5"), address(token1)));
+        vm.expectRevert(abi.encodeWithSelector(IAqua.PushToNonActiveStrategyPrevented.selector, maker, app, keccak256("strategy5"), address(token1)));
         aqua.push(maker, app, keccak256("strategy5"), address(token1), 50e18);
     }
 
@@ -190,7 +191,7 @@ contract AquaTest is Test {
 
         // Try to push token2 (not shipped)
         vm.prank(pusher);
-        vm.expectRevert(abi.encodeWithSelector(Aqua.PushToNonActiveStrategyPrevented.selector, maker, app, keccak256("strategy6"), address(token2)));
+        vm.expectRevert(abi.encodeWithSelector(IAqua.PushToNonActiveStrategyPrevented.selector, maker, app, keccak256("strategy6"), address(token2)));
         aqua.push(maker, app, keccak256("strategy6"), address(token2), 50e18);
     }
 
@@ -231,7 +232,7 @@ contract AquaTest is Test {
 
         // 5. Verify can't push after dock
         vm.prank(pusher);
-        vm.expectRevert(abi.encodeWithSelector(Aqua.PushToNonActiveStrategyPrevented.selector, maker, app, strategyHash, address(token1)));
+        vm.expectRevert(abi.encodeWithSelector(IAqua.PushToNonActiveStrategyPrevented.selector, maker, app, strategyHash, address(token1)));
         aqua.push(maker, app, strategyHash, address(token1), 10e18);
 
         // 6. Verify balances are zero after dock
@@ -364,7 +365,7 @@ contract AquaTest is Test {
         // Try to query safeBalances for non-existent strategy
         vm.expectRevert(
             abi.encodeWithSelector(
-                Aqua.SafeBalancesForTokenNotInActiveStrategy.selector,
+                IAqua.SafeBalancesForTokenNotInActiveStrategy.selector,
                 maker,
                 app,
                 keccak256("nonexistent"),
@@ -395,7 +396,7 @@ contract AquaTest is Test {
         // Try to query with token3 (not in strategy)
         vm.expectRevert(
             abi.encodeWithSelector(
-                Aqua.SafeBalancesForTokenNotInActiveStrategy.selector,
+                IAqua.SafeBalancesForTokenNotInActiveStrategy.selector,
                 maker,
                 app,
                 strategyHash,
@@ -434,7 +435,7 @@ contract AquaTest is Test {
         // Try to query safeBalances after dock
         vm.expectRevert(
             abi.encodeWithSelector(
-                Aqua.SafeBalancesForTokenNotInActiveStrategy.selector,
+                IAqua.SafeBalancesForTokenNotInActiveStrategy.selector,
                 maker,
                 app,
                 strategyHash,
