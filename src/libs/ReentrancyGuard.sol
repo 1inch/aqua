@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: LicenseRef-Degensoft-Aqua-Source-1.1
-pragma solidity ^0.8.0; // tload/tstore are available since 0.8.24
+pragma solidity ^0.8.24;
 
 /// @custom:license-url https://github.com/1inch/aqua/blob/main/LICENSES/Aqua-Source-1.1.txt
 /// @custom:copyright © 2025 Degensoft Ltd
 
 import { TransientLock, TransientLockLib } from "./TransientLock.sol";
 
-/// @dev Base contract with reentrancy guard functionality using transient storage locks.
+/// @title ReentrancyGuard - Transient Storage-Based Protection
+/// @notice Abstract contract providing reentrancy guards using transient storage for gas efficiency.
+/// @dev Requires Solidity >=0.8.24 for transient storage support (tload/tstore operations).
 ///
 /// Use private _lock defined in this contract:
 /// ```solidity

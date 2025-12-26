@@ -7,23 +7,42 @@ pragma solidity ^0.8.0;
 /// @title Aqua - Shared Liquidity Layer
 /// @notice Manages token balances (aka allowances) between makers (liquidity providers) and apps,
 ///         enabling shared liquidity access directly from maker wallets
+/// @dev An "app" is an implementation contract that contains strategy logic and can pull tokens from makers
 interface IAqua {
+    /// @notice Thrown when attempting to dock with an empty tokens array
+    error EmptyTokensArray();
+
+    /// @notice Thrown when attempting to ship a strategy with more than 254 tokens
+    error MaxNumberOfTokensExceeded(uint256 tokensCount, uint256 maxTokensCount);
+
+    /// @notice Thrown when attempting to ship a strategy that has already been shipped
+    error StrategiesMustBeImmutable(address app, bytes32 strategyHash);
+
+    /// @notice Thrown when docking with incorrect number of tokens
+    error DockingShouldCloseAllTokens(address app, bytes32 strategyHash);
+
+    /// @notice Thrown when pushing to a non-active or docked strategy
+    error PushToNonActiveStrategyPrevented(address maker, address app, bytes32 strategyHash, address token);
+
+    /// @notice Thrown when querying safe balances for a token not in the active strategy
+    error SafeBalancesForTokenNotInActiveStrategy(address maker, address app, bytes32 strategyHash, address token);
+
     /// @notice Emitted when a new strategy is shipped (deployed) and initialized with balances
     /// @param maker The address of the maker shipping the strategy
-    /// @param app The strategy address being revoked
+    /// @param app The app address being shipped
     /// @param strategyHash The hash of the strategy being shipped
-    /// @param strategy The strategy being shipped (abi enocoded)
+    /// @param strategy The strategy being shipped (abi encoded)
     event Shipped(address maker, address app, bytes32 strategyHash, bytes strategy);
 
     /// @notice Emitted when a maker revokes (deactivates) a strategy
     /// @param maker The address of the maker revoking the strategy
-    /// @param app The strategy address being revoked
+    /// @param app The app address being revoked
     /// @param strategyHash The hash of the strategy being revoked
     event Docked(address maker, address app, bytes32 strategyHash);
 
     /// @notice Emitted when a strategy pulls tokens from a maker
     /// @param maker The address of the maker whose tokens are being pulled
-    /// @param app The strategy address that pulled the tokens
+    /// @param app The app address that pulled the tokens
     /// @param strategyHash The hash of the strategy being pulled from
     /// @param token The token address being pulled
     /// @param amount The amount of tokens being pulled
@@ -32,7 +51,7 @@ interface IAqua {
 
     /// @notice Emitted when tokens are pushed into a maker's balance
     /// @param maker The address of the maker whose balance receives the tokens
-    /// @param app The strategy that gets increased balance
+    /// @param app The app whose balance is increased
     /// @param strategyHash The hash of the strategy being pushed to
     /// @param token The token address being pushed
     /// @param amount The amount of tokens being pushed and added to the strategy's balance
@@ -41,16 +60,17 @@ interface IAqua {
 
     /// @notice Returns the balance amount for a specific maker, app, and token combination
     /// @param maker The address of the maker who granted the balance
-    /// @param app The address of the app/strategy that can pull tokens
+    /// @param app The address of the app that can pull tokens
     /// @param strategyHash The hash of the strategy being used
     /// @param token The address of the token
     /// @return balance The current balance amount
     /// @return tokensCount The number of tokens in the strategy
     function rawBalances(address maker, address app, bytes32 strategyHash, address token) external view returns (uint248 balance, uint8 tokensCount);
 
-    /// @notice Returns balances of multiple tokens in a strategy, reverts if any of the tokens is not part of the active strategy
+    /// @notice Returns balances of multiple tokens in a strategy
+    /// @dev Reverts with SafeBalancesForTokenNotInActiveStrategy if any token is not part of an active strategy
     /// @param maker The address of the maker who granted the balances
-    /// @param app The address of the app/strategy that can pull tokens
+    /// @param app The address of the app that can pull tokens
     /// @param strategyHash The hash of the strategy being used
     /// @param token0 The address of the first token
     /// @param token1 The address of the second token
@@ -60,7 +80,7 @@ interface IAqua {
 
     /// @notice Ships a new strategy as of an app and sets initial balances
     /// @dev Parameter `strategy` is presented fully instead of being pre-hashed for data availability
-    /// @param app The implementation contract
+    /// @param app The app implementation contract
     /// @param strategy Initialization data passed to the strategy
     /// @param tokens Array of token addresses to approve
     /// @param amounts Array of balance amounts for each token
@@ -72,10 +92,10 @@ interface IAqua {
     ) external returns(bytes32 strategyHash);
 
     /// @notice Docks (deactivates) a strategy by clearing balances for specified tokens
-    /// @dev Sets balances to 0 for all specified tokens
-    /// @param app The strategy address to dock
+    /// @dev Sets balances to 0 for all specified tokens. Reverts with EmptyTokensArray if tokens array is empty.
+    /// @param app The app address to dock
     /// @param strategyHash The hash of the strategy being docked
-    /// @param tokens Array of token addresses to clear
+    /// @param tokens Array of token addresses to clear (must not be empty)
     function dock(address app, bytes32 strategyHash, address[] calldata tokens) external;
 
     /// @notice Allows a strategy to pull tokens from a maker's wallet
@@ -90,7 +110,7 @@ interface IAqua {
     /// @notice Pushes tokens and increases an app balance
     /// @dev Transfers tokens from caller to maker and increases the app's balance
     /// @param maker The maker whose balance receives the tokens
-    /// @param app The address of the app/strategy receiving the tokens
+    /// @param app The address of the app receiving the tokens
     /// @param strategyHash The hash of the strategy being pushed
     /// @param token The token address to push
     /// @param amount The amount to push and add to balance
