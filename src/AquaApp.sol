@@ -15,7 +15,6 @@ import { TransientLock, TransientLockLib } from "./libs/TransientLock.sol";
 abstract contract AquaApp {
     using TransientLockLib for TransientLock;
 
-    error InvalidAquaStrategy(address maker, bytes32 strategyHash, bytes32 salt, address app, address actualThis);
     error MissingTakerAquaPush(address token, uint256 newBalance, uint256 expectedBalance);
     error MissingNonReentrantModifier();
 
