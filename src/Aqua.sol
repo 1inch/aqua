@@ -16,12 +16,6 @@ contract Aqua is IAqua {
     using SafeCast for uint256;
     using BalanceLib for Balance;
 
-    error MaxNumberOfTokensExceeded(uint256 tokensCount, uint256 maxTokensCount);
-    error StrategiesMustBeImmutable(address app, bytes32 strategyHash);
-    error DockingShouldCloseAllTokens(address app, bytes32 strategyHash);
-    error PushToNonActiveStrategyPrevented(address maker, address app, bytes32 strategyHash, address token);
-    error SafeBalancesForTokenNotInActiveStrategy(address maker, address app, bytes32 strategyHash, address token);
-
     uint8 private constant _DOCKED = 0xff;
 
     mapping(address maker =>
