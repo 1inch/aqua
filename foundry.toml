@@ -18,3 +18,9 @@ override_spacing = false
 bracket_spacing = true
 int_types = "long"
 number_underscore = "thousands"
+
+[profile.ci]
+solc_version   = "0.8.30"
+optimizer      = true
+optimizer_runs = 10_000_000
+via_ir         = true
