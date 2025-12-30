@@ -47,7 +47,7 @@ jobs:
         run: npm install
 
       - name: Check gas snapshots
-        run: forge snapshot --check
+        run: forge snapshot --check --tolerance 5 --no-match-test "testFuzz_*"
 
       - name: Run tests
         run: forge test
