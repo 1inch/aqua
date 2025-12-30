@@ -1,6 +1,18 @@
 [profile.default]
-solc-version = "0.8.30"
-runs = 10_000_000
+solc = "0.8.30"
+optimizer = true
+optimizer_runs = 10_000_000
+via_ir = true
+libs = ["node_modules", "lib"]
+fs_permissions = [
+    { access = "read-write", path = "./deployments" },
+    { access = "read-write", path = "./config" }
+]
+
+[profile.ci]
+solc = "0.8.30"
+optimizer = true
+optimizer_runs = 10_000_000
 via_ir = true
 libs = ["node_modules", "lib"]
 fs_permissions = [
@@ -9,7 +21,7 @@ fs_permissions = [
 ]
 
 [profile.solx]
-solc_version = "~/.local/bin/solx"
+solc = "~/.local/bin/solx"
 
 [fmt]
 single_line_statement_blocks = "multi"

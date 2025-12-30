@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 /// @custom:license-url https://github.com/1inch/aqua/blob/main/LICENSES/Aqua-Source-1.1.txt
 /// @custom:copyright © 2025 Degensoft Ltd
 
-import "forge-std/Test.sol";
+import { Test, console } from "forge-std/Test.sol";
 import { dynamic } from "test/utils/Dynamic.sol";
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
