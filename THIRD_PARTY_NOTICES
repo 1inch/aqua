@@ -24,7 +24,7 @@ License: /LICENSES/MIT-OpenZeppelin.txt
 
 Component: @1inch/solidity-utils
 Repo: https://github.com/1inch/solidity-utils
-Version: v6.9.0
+Version: v6.9.2
 License: MIT
 Copyright: © 2019, 1inch
 License: /LICENSES/MIT-1inch.txt
