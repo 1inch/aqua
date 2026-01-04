@@ -22,6 +22,65 @@ Shared liquidity layer protocol enabling liquidity providers to allocate balance
   - [For Developers](#for-developers)
 - [API Reference](#api-reference)
 - [Getting Started](#getting-started)
+// Liquidity Lifecycle Management
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+// Ship new strategy with initial balances (immutable after creation)
+function ship(
+    address app,
+    bytes calldata strategy,
+    address[] calldata tokens,
+    uint256[] calldata amounts
+) external returns(bytes32 strategyHash);
+
+// Deactivate strategy and withdraw all balances
+function dock(
+    address app,
+    bytes32 strategyHash,
+    address[] calldata tokens
+) external;
+
+// Swap Execution Only
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+// Pull tokens from maker during swap (called by apps)
+function pull(
+    address maker,
+    bytes32 strategyHash,
+    address token,
+    uint256 amount,
+    address to
+) external;
+
+// Push tokens to maker's strategy balance during swap
+function push(
+    address maker,
+    address app,
+    bytes32 strategyHash,
+    address token,
+    uint256 amount
+) external;
+
+// Queries
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+// Query virtual balance
+function rawBalances(
+    address maker,
+    address app,
+    bytes32 strategyHash,
+    address token
+) external view returns (uint248 balance, uint8 tokensCount);
+
+// Query multiple token balances with active strategy validation
+// Reverts if any token is not part of the active strategy
+function safeBalances(
+    address maker,
+    address app,
+    bytes32 strategyHash,
+    address token0,
+    address token1
+) external view returns (uint256 balance0, uint256 balance1);
 
 ```
 Traditional AMM Pools                 Aqua Protocol
