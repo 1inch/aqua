@@ -100,19 +100,50 @@ contract AquaBalancesTest is AquaTestBase {
         );
     }
 
-    function testSafeBalancesRevertsIfAnyTokenNotInStrategy() public {
+    function testSafeBalancesRevertsIfFirstTokenNotInStrategy() public {
         // Ship with token1 and token2
         vm.prank(maker);
         aqua.ship(
             app,
-            "safe_partial",
+            "safe_first_token",
             dynamic([address(token1), address(token2)]),
             dynamic([uint256(100e18), uint256(200e18)])
         );
 
-        bytes32 strategyHash = keccak256("safe_partial");
+        bytes32 strategyHash = keccak256("safe_first_token");
 
-        // Try to query with token3 (not in strategy)
+        // Try to query with token3 as first token (not in strategy)
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAqua.SafeBalancesForTokenNotInActiveStrategy.selector,
+                maker,
+                app,
+                strategyHash,
+                address(token3)
+            )
+        );
+        aqua.safeBalances(
+            maker,
+            app,
+            strategyHash,
+            address(token3),  // first token not in strategy
+            address(token1)
+        );
+    }
+
+    function testSafeBalancesRevertsIfSecondTokenNotInStrategy() public {
+        // Ship with token1 and token2
+        vm.prank(maker);
+        aqua.ship(
+            app,
+            "safe_second_token",
+            dynamic([address(token1), address(token2)]),
+            dynamic([uint256(100e18), uint256(200e18)])
+        );
+
+        bytes32 strategyHash = keccak256("safe_second_token");
+
+        // Try to query with token3 as second token (not in strategy)
         vm.expectRevert(
             abi.encodeWithSelector(
                 IAqua.SafeBalancesForTokenNotInActiveStrategy.selector,
@@ -127,6 +158,38 @@ contract AquaBalancesTest is AquaTestBase {
             app,
             strategyHash,
             address(token1),
+            address(token3)  // second token not in strategy
+        );
+    }
+
+    function testSafeBalancesRevertsIfBothTokensNotInStrategy() public {
+        // Ship with token1 only
+        vm.prank(maker);
+        aqua.ship(
+            app,
+            "safe_both_tokens",
+            dynamic([address(token1)]),
+            dynamic([uint256(100e18)])
+        );
+
+        bytes32 strategyHash = keccak256("safe_both_tokens");
+
+        // Try to query with token2 and token3 (neither in strategy)
+        // Should fail on first token check (token2)
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAqua.SafeBalancesForTokenNotInActiveStrategy.selector,
+                maker,
+                app,
+                strategyHash,
+                address(token2)
+            )
+        );
+        aqua.safeBalances(
+            maker,
+            app,
+            strategyHash,
+            address(token2),
             address(token3)
         );
     }

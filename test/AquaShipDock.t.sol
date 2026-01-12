@@ -11,6 +11,22 @@ import { IAqua } from "src/interfaces/IAqua.sol";
 contract AquaShipDockTest is AquaTestBase {
     // ========== SHIP TESTS ==========
 
+    function testShipRevertsWhenTokenCountEquals255() public {
+        // Create arrays with 255 tokens (which equals _DOCKED constant)
+        address[] memory tokens = new address[](255);
+        uint256[] memory amounts = new uint256[](255);
+
+        for (uint256 i = 0; i < 255; i++) {
+            tokens[i] = address(uint160(i + 1000)); // unique addresses
+            amounts[i] = 1e18;
+        }
+
+        // Should revert with MaxNumberOfTokensExceeded
+        vm.prank(maker);
+        vm.expectRevert(abi.encodeWithSelector(IAqua.MaxNumberOfTokensExceeded.selector, 255, 255));
+        aqua.ship(app, "strategy_255", tokens, amounts);
+    }
+
     function testShipCannotBeCalledTwiceForSameStrategy() public {
         // First ship
         vm.prank(maker);
@@ -104,6 +120,45 @@ contract AquaShipDockTest is AquaTestBase {
             app,
             keccak256("strategy4"),
             dynamic([address(token1), address(token2), address(token3)])
+        );
+    }
+
+    function testDockNonExistentStrategyReverts() public {
+        // Try to dock a strategy that was never shipped
+        vm.prank(maker);
+        vm.expectRevert(abi.encodeWithSelector(IAqua.DockingShouldCloseAllTokens.selector, app, keccak256("nonexistent")));
+        aqua.dock(
+            app,
+            keccak256("nonexistent"),
+            dynamic([address(token1)])
+        );
+    }
+
+    function testDockAlreadyDockedStrategyReverts() public {
+        // Ship a strategy
+        vm.prank(maker);
+        aqua.ship(
+            app,
+            "dock_twice",
+            dynamic([address(token1)]),
+            dynamic([uint256(100e18)])
+        );
+
+        // Dock the strategy
+        vm.prank(maker);
+        aqua.dock(
+            app,
+            keccak256("dock_twice"),
+            dynamic([address(token1)])
+        );
+
+        // Try to dock again - should fail because tokensCount is now _DOCKED (255)
+        vm.prank(maker);
+        vm.expectRevert(abi.encodeWithSelector(IAqua.DockingShouldCloseAllTokens.selector, app, keccak256("dock_twice")));
+        aqua.dock(
+            app,
+            keccak256("dock_twice"),
+            dynamic([address(token1)])
         );
     }
 
