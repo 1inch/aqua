@@ -7,14 +7,8 @@ pragma solidity ^0.8.13;
 import { Test } from "forge-std/Test.sol";
 import { dynamic } from "./utils/Dynamic.sol";
 import { StorageAccesses } from "./utils/StorageAccesses.sol";
-import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { MockToken } from "./mock/ERC20.sol";
 import { Aqua } from "src/Aqua.sol";
-
-contract MockToken is ERC20 {
-    constructor(string memory name) ERC20(name, "MOCK") {
-        _mint(msg.sender, 1000000e18);
-    }
-}
 
 contract AquaStorageTest is Test {
     Aqua public aqua;
