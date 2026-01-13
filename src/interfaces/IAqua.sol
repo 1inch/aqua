@@ -37,6 +37,10 @@ interface IAqua {
     /// @param token The token being queried
     error SafeBalancesForTokenNotInActiveStrategy(address maker, address app, bytes32 strategyHash, address token);
 
+    /// @notice Thrown when the beforeShip hook fails
+    /// @param app The app address that failed the hook
+    error ShipHookFailed(address app);
+
     /// @notice Emitted when a new strategy is shipped (deployed) and initialized with balances
     /// @param maker The address of the maker shipping the strategy
     /// @param app The app address associated with the strategy
@@ -89,6 +93,7 @@ interface IAqua {
 
     /// @notice Ships a new strategy as of an app and sets initial balances
     /// @dev Parameter `strategy` is presented fully instead of being pre-hashed for data availability
+    ///      If ETH is sent, calls beforeShip hook on the app to handle wrapping
     /// @param app The implementation contract
     /// @param strategy Initialization data passed to the strategy
     /// @param tokens Array of token addresses to approve
@@ -98,7 +103,7 @@ interface IAqua {
         bytes calldata strategy,
         address[] calldata tokens,
         uint256[] calldata amounts
-    ) external returns(bytes32 strategyHash);
+    ) external payable returns(bytes32 strategyHash);
 
     /// @notice Docks (deactivates) a strategy by clearing balances for specified tokens
     /// @dev Sets balances to 0 for all specified tokens

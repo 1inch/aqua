@@ -8,6 +8,7 @@ import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { SafeERC20, IERC20 } from "@1inch/solidity-utils/contracts/libraries/SafeERC20.sol";
 
 import { IAqua } from "./interfaces/IAqua.sol";
+import { IShipHook } from "./interfaces/IShipHook.sol";
 import { Balance, BalanceLib } from "./libs/Balance.sol";
 
 /// @title Aqua - Shared Liquidity Layer
@@ -37,10 +38,26 @@ contract Aqua is IAqua {
         balance1 = amount1;
     }
 
-    function ship(address app, bytes calldata strategy, address[] calldata tokens, uint256[] calldata amounts) external returns(bytes32 strategyHash) {
+    /// @notice Thrown when the beforeShip hook fails
+    /// @param app The app address that failed the hook
+    error ShipHookFailed(address app);
+
+    function ship(address app, bytes calldata strategy, address[] calldata tokens, uint256[] calldata amounts) external payable returns(bytes32 strategyHash) {
         strategyHash = keccak256(strategy);
         uint8 tokensCount = tokens.length.toUint8();
         require(tokensCount != _DOCKED, MaxNumberOfTokensExceeded(tokensCount, _DOCKED));
+
+        // If ETH is sent, call beforeShip hook on the app
+        // This allows apps to handle ETH wrapping (e.g., wrap to WETH and send to maker)
+        if (msg.value > 0) {
+            bool success = IShipHook(app).beforeShip{value: msg.value}(
+                msg.sender,
+                strategyHash,
+                tokens,
+                amounts
+            );
+            require(success, ShipHookFailed(app));
+        }
 
         emit Shipped(msg.sender, app, strategyHash, strategy);
         for (uint256 i = 0; i < tokens.length; i++) {
