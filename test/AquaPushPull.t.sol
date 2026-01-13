@@ -142,4 +142,65 @@ contract AquaPushPullTest is AquaTestBase {
         vm.expectRevert(); // Arithmetic underflow
         aqua.pull(maker, keccak256("pull_docked"), address(token1), 50e18, app);
     }
+
+    // ========== OVERFLOW TESTS ==========
+
+    function testPushAccumulatesBalance() public {
+        // Test that push correctly accumulates balance without overflow
+        // Ship with max available tokens
+        vm.prank(maker);
+        aqua.ship(
+            app,
+            "strategy_overflow",
+            dynamic([address(token1)]),
+            dynamic([uint256(9000e18)]) // maker has 10000e18
+        );
+
+        bytes32 strategyHash = keccak256("strategy_overflow");
+
+        // Pusher has 10000e18 tokens, push would make balance 19000e18 - this works
+        vm.prank(pusher);
+        aqua.push(maker, app, strategyHash, address(token1), 1000e18);
+
+        (uint256 balance,) = aqua.rawBalances(maker, app, strategyHash, address(token1));
+        assertEq(balance, 10000e18);
+    }
+
+    function testPushRevertsOnUint248Overflow() public {
+        // This test verifies that pushing an amount that would overflow uint248 reverts
+        // The contract uses SafeCast which will revert on overflow
+        
+        // Ship a strategy
+        vm.prank(maker);
+        aqua.ship(
+            app,
+            "strategy_uint248_overflow",
+            dynamic([address(token1)]),
+            dynamic([uint256(100e18)])
+        );
+
+        bytes32 strategyHash = keccak256("strategy_uint248_overflow");
+
+        // Try to push an amount larger than uint248 max
+        // This will fail at SafeCast.toUint248() in push function
+        uint256 tooLargeAmount = uint256(type(uint248).max) + 1;
+        
+        vm.prank(pusher);
+        vm.expectRevert(); // SafeCast overflow
+        aqua.push(maker, app, strategyHash, address(token1), tooLargeAmount);
+    }
+
+    function testShipRevertsOnUint248AmountOverflow() public {
+        // Test that shipping with amount > uint248 max reverts
+        uint256 tooLargeAmount = uint256(type(uint248).max) + 1;
+
+        vm.prank(maker);
+        vm.expectRevert(); // SafeCast overflow
+        aqua.ship(
+            app,
+            "strategy_ship_overflow",
+            dynamic([address(token1)]),
+            dynamic([tooLargeAmount])
+        );
+    }
 }

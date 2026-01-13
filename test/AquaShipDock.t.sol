@@ -61,6 +61,89 @@ contract AquaShipDockTest is AquaTestBase {
         );
     }
 
+    function testShipWithLargeAmountsPreservesTokenCount() public {
+        // Ship with large amounts to verify tokensCount is not overwritten by balance
+        // The Balance struct packs amount (uint248) and tokensCount (uint8) in one slot
+        vm.prank(maker);
+        aqua.ship(
+            app,
+            "strategy_large",
+            dynamic([address(token1), address(token2)]),
+            dynamic([uint256(1000e18), uint256(2000e18)])
+        );
+
+        bytes32 strategyHash = keccak256("strategy_large");
+
+        // Verify tokensCount is preserved correctly
+        (uint256 balance1, uint8 tokensCount1) = aqua.rawBalances(maker, app, strategyHash, address(token1));
+        (uint256 balance2, uint8 tokensCount2) = aqua.rawBalances(maker, app, strategyHash, address(token2));
+
+        assertEq(balance1, 1000e18);
+        assertEq(balance2, 2000e18);
+        assertEq(tokensCount1, 2, "tokensCount should be 2, not overwritten by amount");
+        assertEq(tokensCount2, 2, "tokensCount should be 2, not overwritten by amount");
+
+        // Push more tokens and verify tokensCount still preserved
+        vm.prank(pusher);
+        aqua.push(maker, app, strategyHash, address(token1), 500e18);
+
+        (balance1, tokensCount1) = aqua.rawBalances(maker, app, strategyHash, address(token1));
+        assertEq(balance1, 1500e18);
+        assertEq(tokensCount1, 2, "tokensCount should remain 2 after push");
+    }
+
+    function testFuzzShipAmountDoesNotOverwriteTokenCount(uint248 amount1, uint248 amount2) public {
+        // Bound amounts to what maker has available (10000e18 each token)
+        amount1 = uint248(bound(amount1, 0, 10000e18));
+        amount2 = uint248(bound(amount2, 0, 10000e18));
+
+        vm.prank(maker);
+        aqua.ship(
+            app,
+            "strategy_fuzz",
+            dynamic([address(token1), address(token2)]),
+            dynamic([uint256(amount1), uint256(amount2)])
+        );
+
+        bytes32 strategyHash = keccak256("strategy_fuzz");
+
+        // Verify tokensCount is always 2 regardless of amounts
+        (, uint8 tokensCount1) = aqua.rawBalances(maker, app, strategyHash, address(token1));
+        (, uint8 tokensCount2) = aqua.rawBalances(maker, app, strategyHash, address(token2));
+
+        assertEq(tokensCount1, 2, "tokensCount must be 2 for any amount");
+        assertEq(tokensCount2, 2, "tokensCount must be 2 for any amount");
+    }
+
+    function testShipWithZeroAmounts() public {
+        // Ship with zero amounts - should succeed (no require check for zero)
+        vm.prank(maker);
+        aqua.ship(
+            app,
+            "strategy_zero",
+            dynamic([address(token1), address(token2)]),
+            dynamic([uint256(0), uint256(0)])
+        );
+
+        bytes32 strategyHash = keccak256("strategy_zero");
+
+        // Verify balances are zero but strategy is active
+        (uint256 balance1, uint8 tokensCount1) = aqua.rawBalances(maker, app, strategyHash, address(token1));
+        (uint256 balance2, uint8 tokensCount2) = aqua.rawBalances(maker, app, strategyHash, address(token2));
+
+        assertEq(balance1, 0);
+        assertEq(balance2, 0);
+        assertEq(tokensCount1, 2); // Strategy is active with 2 tokens
+        assertEq(tokensCount2, 2);
+
+        // Push should still work on this strategy
+        vm.prank(pusher);
+        aqua.push(maker, app, strategyHash, address(token1), 50e18);
+
+        (balance1,) = aqua.rawBalances(maker, app, strategyHash, address(token1));
+        assertEq(balance1, 50e18);
+    }
+
     // ========== DOCK TESTS ==========
 
     function testDockRequiresAllTokensFromShip() public {
