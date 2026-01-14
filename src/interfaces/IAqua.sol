@@ -37,9 +37,13 @@ interface IAqua {
     /// @param token The token being queried
     error SafeBalancesForTokenNotInActiveStrategy(address maker, address app, bytes32 strategyHash, address token);
 
-    /// @notice Thrown when the beforeShip hook fails
+    /// @notice Thrown when a ship hook fails
     /// @param app The app address that failed the hook
-    error ShipHookFailed(address app);
+    /// @param hookType 1 = beforeShip, 2 = afterShip
+    error ShipHookFailed(address app, uint8 hookType);
+
+    /// @notice Thrown when ETH is sent but HOOK_BEFORE flag is not set
+    error ETHSentWithoutBeforeHook();
 
     /// @notice Emitted when a new strategy is shipped (deployed) and initialized with balances
     /// @param maker The address of the maker shipping the strategy
@@ -93,16 +97,21 @@ interface IAqua {
 
     /// @notice Ships a new strategy as of an app and sets initial balances
     /// @dev Parameter `strategy` is presented fully instead of being pre-hashed for data availability
-    ///      If ETH is sent, calls beforeShip hook on the app to handle wrapping
+    ///      Hooks are optional and controlled via the `hooks` flags parameter:
+    ///      - HOOK_BEFORE (0x01): Call beforeShip before balance storage (required if ETH sent)
+    ///      - HOOK_AFTER (0x02): Call afterShip after balance storage
+    ///      - HOOK_BOTH (0x03): Call both hooks
     /// @param app The implementation contract
     /// @param strategy Initialization data passed to the strategy
     /// @param tokens Array of token addresses to approve
     /// @param amounts Array of balance amounts for each token
+    /// @param hooks Bitmask of hooks to call (0x00=none, 0x01=before, 0x02=after, 0x03=both)
     function ship(
         address app,
         bytes calldata strategy,
         address[] calldata tokens,
-        uint256[] calldata amounts
+        uint256[] calldata amounts,
+        uint8 hooks
     ) external payable returns(bytes32 strategyHash);
 
     /// @notice Docks (deactivates) a strategy by clearing balances for specified tokens

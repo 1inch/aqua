@@ -19,6 +19,12 @@ contract Aqua is IAqua {
 
     uint8 private constant _DOCKED = 0xff;
 
+    /// @notice Hook flags for optional ship lifecycle hooks
+    uint8 public constant HOOK_NONE = 0x00;
+    uint8 public constant HOOK_BEFORE = 0x01;
+    uint8 public constant HOOK_AFTER = 0x02;
+    uint8 public constant HOOK_BOTH = 0x03;
+
     mapping(address maker =>
         mapping(address app =>
             mapping(bytes32 strategyHash =>
@@ -38,33 +44,60 @@ contract Aqua is IAqua {
         balance1 = amount1;
     }
 
-    /// @notice Thrown when the beforeShip hook fails
+    /// @notice Thrown when a ship hook fails
     /// @param app The app address that failed the hook
-    error ShipHookFailed(address app);
+    /// @param hookType 1 = beforeShip, 2 = afterShip
+    error ShipHookFailed(address app, uint8 hookType);
 
-    function ship(address app, bytes calldata strategy, address[] calldata tokens, uint256[] calldata amounts) external payable returns(bytes32 strategyHash) {
+    /// @notice Thrown when ETH is sent but HOOK_BEFORE flag is not set
+    error ETHSentWithoutBeforeHook();
+
+    function ship(
+        address app,
+        bytes calldata strategy,
+        address[] calldata tokens,
+        uint256[] calldata amounts,
+        uint8 hooks
+    ) external payable returns(bytes32 strategyHash) {
         strategyHash = keccak256(strategy);
         uint8 tokensCount = tokens.length.toUint8();
         require(tokensCount != _DOCKED, MaxNumberOfTokensExceeded(tokensCount, _DOCKED));
 
-        // If ETH is sent, call beforeShip hook on the app
-        // This allows apps to handle ETH wrapping (e.g., wrap to WETH and send to maker)
+        // If ETH is sent, HOOK_BEFORE must be set
         if (msg.value > 0) {
+            require((hooks & HOOK_BEFORE) != 0, ETHSentWithoutBeforeHook());
+        }
+
+        // beforeShip hook: called before balance storage (if HOOK_BEFORE flag set)
+        // Use for: ETH wrapping, pre-validation, setup
+        if ((hooks & HOOK_BEFORE) != 0) {
             bool success = IShipHook(app).beforeShip{value: msg.value}(
                 msg.sender,
                 strategyHash,
                 tokens,
                 amounts
             );
-            require(success, ShipHookFailed(app));
+            require(success, ShipHookFailed(app, HOOK_BEFORE));
         }
 
+        // Core ship logic: store balances
         emit Shipped(msg.sender, app, strategyHash, strategy);
         for (uint256 i = 0; i < tokens.length; i++) {
             Balance storage balance = _balances[msg.sender][app][strategyHash][tokens[i]];
             require(balance.tokensCount == 0, StrategiesMustBeImmutable(app, strategyHash));
             balance.store(amounts[i].toUint248(), tokensCount);
             emit Pushed(msg.sender, app, strategyHash, tokens[i], amounts[i]);
+        }
+
+        // afterShip hook: called after balance storage (if HOOK_AFTER flag set)
+        // Use for: notifications, additional state setup, external calls
+        if ((hooks & HOOK_AFTER) != 0) {
+            IShipHook(app).afterShip(
+                msg.sender,
+                strategyHash,
+                tokens,
+                amounts
+            );
         }
     }
 
