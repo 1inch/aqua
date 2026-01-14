@@ -6,17 +6,25 @@ pragma solidity 0.8.30;
 
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { SafeERC20, IERC20 } from "@1inch/solidity-utils/contracts/libraries/SafeERC20.sol";
+import { ReentrancyGuardTransient } from "@openzeppelin/contracts/utils/ReentrancyGuardTransient.sol";
 
 import { IAqua } from "./interfaces/IAqua.sol";
+import { IShipHook } from "./interfaces/IShipHook.sol";
 import { Balance, BalanceLib } from "./libs/Balance.sol";
 
 /// @title Aqua - Shared Liquidity Layer
-contract Aqua is IAqua {
+contract Aqua is IAqua, ReentrancyGuardTransient {
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
     using BalanceLib for Balance;
 
     uint8 private constant _DOCKED = 0xff;
+
+    /// @notice Hook flags for optional ship lifecycle hooks
+    uint8 public constant HOOK_NONE = 0x00;
+    uint8 public constant HOOK_BEFORE = 0x01;
+    uint8 public constant HOOK_AFTER = 0x02;
+    uint8 public constant HOOK_BOTH = 0x03;
 
     mapping(address maker =>
         mapping(address app =>
@@ -37,17 +45,61 @@ contract Aqua is IAqua {
         balance1 = amount1;
     }
 
-    function ship(address app, bytes calldata strategy, address[] calldata tokens, uint256[] calldata amounts) external returns(bytes32 strategyHash) {
+    function ship(
+        address app,
+        bytes calldata strategy,
+        address[] calldata tokens,
+        uint256[] calldata amounts,
+        uint8 hooks
+    ) external payable nonReentrant returns(bytes32 strategyHash) {
         strategyHash = keccak256(strategy);
         uint8 tokensCount = tokens.length.toUint8();
         require(tokensCount != _DOCKED, MaxNumberOfTokensExceeded(tokensCount, _DOCKED));
 
+        // If ETH is sent, HOOK_BEFORE must be set
+        if (msg.value > 0) {
+            require((hooks & HOOK_BEFORE) != 0, ETHSentWithoutBeforeHook());
+        }
+
+        // beforeShip hook: called BEFORE balance storage (if HOOK_BEFORE flag set)
+        // Use for: ETH wrapping, pre-validation, setup
+        // Note: If app doesn't implement IShipHook, this will revert. This is intentional -
+        // apps should only set HOOK_BEFORE if they implement the hook. No ERC-165 check
+        // is performed to save gas (~2600 gas saved per call).
+        if ((hooks & HOOK_BEFORE) != 0) {
+            bool success = IShipHook(app).beforeShip{value: msg.value}(
+                msg.sender,
+                strategyHash,
+                tokens,
+                amounts
+            );
+            // beforeShip returns bool to allow graceful failure signaling.
+            // Returning false triggers ShipHookFailed; reverting propagates the error.
+            require(success, ShipHookFailed(app, HOOK_BEFORE));
+        }
+
+        // Core ship logic: store balances
         emit Shipped(msg.sender, app, strategyHash, strategy);
         for (uint256 i = 0; i < tokens.length; i++) {
             Balance storage balance = _balances[msg.sender][app][strategyHash][tokens[i]];
             require(balance.tokensCount == 0, StrategiesMustBeImmutable(app, strategyHash));
             balance.store(amounts[i].toUint248(), tokensCount);
             emit Pushed(msg.sender, app, strategyHash, tokens[i], amounts[i]);
+        }
+
+        // afterShip hook: called AFTER balance storage (if HOOK_AFTER flag set)
+        // Use for: notifications, additional state setup, external calls
+        // Note: Unlike beforeShip, afterShip has no return value. This is intentional:
+        // - afterShip is for side effects, not validation
+        // - If it fails, it should revert (consistent with callback patterns)
+        // - Any revert here will roll back the entire transaction including balance storage
+        if ((hooks & HOOK_AFTER) != 0) {
+            IShipHook(app).afterShip(
+                msg.sender,
+                strategyHash,
+                tokens,
+                amounts
+            );
         }
     }
 

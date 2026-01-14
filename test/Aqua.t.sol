@@ -58,7 +58,8 @@ contract AquaTest is Test {
             app,
             "strategy1",
             dynamic([address(token1)]),
-            dynamic([uint256(100e18)])
+            dynamic([uint256(100e18)]),
+            0
         );
 
         // Try to ship again with same strategy
@@ -68,7 +69,8 @@ contract AquaTest is Test {
             app,
             "strategy1",
             dynamic([address(token1)]),
-            dynamic([uint256(50e18)])
+            dynamic([uint256(50e18)]),
+            0
         );
     }
 
@@ -81,7 +83,8 @@ contract AquaTest is Test {
             app,
             "strategy_dup",
             dynamic([address(token1), address(token1)]),
-            dynamic([uint256(100e18), uint256(200e18)])
+            dynamic([uint256(100e18), uint256(200e18)]),
+            0
         );
     }
 
@@ -94,7 +97,8 @@ contract AquaTest is Test {
             app,
             "strategy2",
             dynamic([address(token1), address(token2)]),
-            dynamic([uint256(100e18), uint256(200e18)])
+            dynamic([uint256(100e18), uint256(200e18)]),
+            0
         );
 
         // Try to dock with only 1 token
@@ -114,7 +118,8 @@ contract AquaTest is Test {
             app,
             "strategy3",
             dynamic([address(token1), address(token2)]),
-            dynamic([uint256(100e18), uint256(200e18)])
+            dynamic([uint256(100e18), uint256(200e18)]),
+            0
         );
 
         // Try to dock with different token
@@ -134,7 +139,8 @@ contract AquaTest is Test {
             app,
             "strategy4",
             dynamic([address(token1), address(token2)]),
-            dynamic([uint256(100e18), uint256(200e18)])
+            dynamic([uint256(100e18), uint256(200e18)]),
+            0
         );
 
         // Try to dock with 3 tokens
@@ -163,7 +169,8 @@ contract AquaTest is Test {
             app,
             "strategy5",
             dynamic([address(token1)]),
-            dynamic([uint256(100e18)])
+            dynamic([uint256(100e18)]),
+            0
         );
 
         vm.prank(maker);
@@ -186,7 +193,8 @@ contract AquaTest is Test {
             app,
             "strategy6",
             dynamic([address(token1)]),
-            dynamic([uint256(100e18)])
+            dynamic([uint256(100e18)]),
+            0
         );
 
         // Try to push token2 (not shipped)
@@ -207,7 +215,8 @@ contract AquaTest is Test {
             app,
             "lifecycle",
             dynamic([address(token1), address(token2)]),
-            dynamic([uint256(100e18), uint256(200e18)])
+            dynamic([uint256(100e18), uint256(200e18)]),
+            0
         );
 
         // 2. Push to token1
@@ -251,7 +260,8 @@ contract AquaTest is Test {
             app,
             "multi1",
             dynamic([address(token1), address(token2)]),
-            dynamic([uint256(100e18), uint256(200e18)])
+            dynamic([uint256(100e18), uint256(200e18)]),
+            0
         );
 
         // Ship strategy 2 with same tokens but different salt
@@ -260,7 +270,8 @@ contract AquaTest is Test {
             app,
             "multi2",
             dynamic([address(token1), address(token2)]),
-            dynamic([uint256(300e18), uint256(400e18)])
+            dynamic([uint256(300e18), uint256(400e18)]),
+            0
         );
 
         // Verify both strategies work independently
@@ -307,7 +318,8 @@ contract AquaTest is Test {
             app,
             "balances_test",
             dynamic([address(token1)]),
-            dynamic([uint256(100e18)])
+            dynamic([uint256(100e18)]),
+            0
         );
 
         // Query balance for token2 (not in strategy) - should return 0
@@ -322,7 +334,8 @@ contract AquaTest is Test {
             app,
             "balances_multi",
             dynamic([address(token1), address(token2), address(token3)]),
-            dynamic([uint256(100e18), uint256(200e18), uint256(300e18)])
+            dynamic([uint256(100e18), uint256(200e18), uint256(300e18)]),
+            0
         );
 
         bytes32 strategyHash = keccak256("balances_multi");
@@ -343,7 +356,8 @@ contract AquaTest is Test {
             app,
             "safe_balances",
             dynamic([address(token1), address(token2)]),
-            dynamic([uint256(150e18), uint256(250e18)])
+            dynamic([uint256(150e18), uint256(250e18)]),
+            0
         );
 
         bytes32 strategyHash = keccak256("safe_balances");
@@ -388,7 +402,8 @@ contract AquaTest is Test {
             app,
             "safe_partial",
             dynamic([address(token1), address(token2)]),
-            dynamic([uint256(100e18), uint256(200e18)])
+            dynamic([uint256(100e18), uint256(200e18)]),
+            0
         );
 
         bytes32 strategyHash = keccak256("safe_partial");
@@ -419,7 +434,8 @@ contract AquaTest is Test {
             app,
             "safe_docked",
             dynamic([address(token1)]),
-            dynamic([uint256(100e18)])
+            dynamic([uint256(100e18)]),
+            0
         );
 
         bytes32 strategyHash = keccak256("safe_docked");
@@ -458,7 +474,8 @@ contract AquaTest is Test {
             app,
             "safe_changes",
             dynamic([address(token1), address(token2)]),
-            dynamic([uint256(100e18), uint256(200e18)])
+            dynamic([uint256(100e18), uint256(200e18)]),
+            0
         );
 
         bytes32 strategyHash = keccak256("safe_changes");
