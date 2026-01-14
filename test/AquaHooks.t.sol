@@ -127,12 +127,76 @@ contract MockNonHookApp {
     // This app doesn't implement IShipHook
 }
 
+/// @title ReentrantHookApp - App that tries to re-enter ship() from hooks
+contract ReentrantHookApp is IShipHook {
+    Aqua public aqua;
+    bool public attemptReentry;
+    bool public reentrancyAttempted;
+    bool public reentrancySucceeded;
+
+    constructor(address _aqua) {
+        aqua = Aqua(_aqua);
+    }
+
+    function setAttemptReentry(bool _attempt) external {
+        attemptReentry = _attempt;
+    }
+
+    function beforeShip(
+        address,
+        bytes32,
+        address[] calldata tokens,
+        uint256[] calldata amounts
+    ) external payable override returns (bool success) {
+        if (attemptReentry) {
+            reentrancyAttempted = true;
+            // Try to re-enter ship
+            try aqua.ship(
+                address(this),
+                "reentrant_strategy",
+                tokens,
+                amounts,
+                0
+            ) {
+                reentrancySucceeded = true;
+            } catch {
+                reentrancySucceeded = false;
+            }
+        }
+        return true;
+    }
+
+    function afterShip(
+        address,
+        bytes32,
+        address[] calldata tokens,
+        uint256[] calldata amounts
+    ) external override {
+        if (attemptReentry) {
+            reentrancyAttempted = true;
+            // Try to re-enter ship
+            try aqua.ship(
+                address(this),
+                "reentrant_strategy_after",
+                tokens,
+                amounts,
+                0
+            ) {
+                reentrancySucceeded = true;
+            } catch {
+                reentrancySucceeded = false;
+            }
+        }
+    }
+}
+
 contract AquaHooksTest is Test {
     Aqua public aqua;
     MockToken public token1;
     MockWETH public weth;
     MockHookApp public hookApp;
     MockNonHookApp public nonHookApp;
+    ReentrantHookApp public reentrantApp;
 
     address public maker = address(0x1111);
 
@@ -142,6 +206,7 @@ contract AquaHooksTest is Test {
         weth = new MockWETH();
         hookApp = new MockHookApp(address(weth));
         nonHookApp = new MockNonHookApp();
+        reentrantApp = new ReentrantHookApp(address(aqua));
 
         // Setup tokens and approvals
         token1.transfer(maker, 10000e18);
@@ -536,5 +601,73 @@ contract AquaHooksTest is Test {
 
         assertEq(weth.balanceOf(maker), ethAmount);
         assertEq(hookApp.lastEthReceived(), ethAmount);
+    }
+
+    // ========== REENTRANCY PROTECTION TESTS ==========
+
+    function testReentrancyFromBeforeShipIsBlocked() public {
+        reentrantApp.setAttemptReentry(true);
+
+        address[] memory tokens = new address[](1);
+        tokens[0] = address(token1);
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 100e18;
+
+        vm.prank(maker);
+        aqua.ship(
+            address(reentrantApp),
+            "strategy_reentry_before",
+            tokens,
+            amounts,
+            1 // HOOK_BEFORE
+        );
+
+        // Reentrancy was attempted but blocked
+        assertTrue(reentrantApp.reentrancyAttempted());
+        assertFalse(reentrantApp.reentrancySucceeded());
+    }
+
+    function testReentrancyFromAfterShipIsBlocked() public {
+        reentrantApp.setAttemptReentry(true);
+
+        address[] memory tokens = new address[](1);
+        tokens[0] = address(token1);
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 100e18;
+
+        vm.prank(maker);
+        aqua.ship(
+            address(reentrantApp),
+            "strategy_reentry_after",
+            tokens,
+            amounts,
+            2 // HOOK_AFTER
+        );
+
+        // Reentrancy was attempted but blocked
+        assertTrue(reentrantApp.reentrancyAttempted());
+        assertFalse(reentrantApp.reentrancySucceeded());
+    }
+
+    function testReentrancyFromBothHooksIsBlocked() public {
+        reentrantApp.setAttemptReentry(true);
+
+        address[] memory tokens = new address[](1);
+        tokens[0] = address(token1);
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 100e18;
+
+        vm.prank(maker);
+        aqua.ship(
+            address(reentrantApp),
+            "strategy_reentry_both",
+            tokens,
+            amounts,
+            3 // HOOK_BOTH
+        );
+
+        // Reentrancy was attempted but blocked
+        assertTrue(reentrantApp.reentrancyAttempted());
+        assertFalse(reentrantApp.reentrancySucceeded());
     }
 }

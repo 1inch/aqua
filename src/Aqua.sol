@@ -6,13 +6,14 @@ pragma solidity 0.8.30;
 
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { SafeERC20, IERC20 } from "@1inch/solidity-utils/contracts/libraries/SafeERC20.sol";
+import { ReentrancyGuardTransient } from "@openzeppelin/contracts/utils/ReentrancyGuardTransient.sol";
 
 import { IAqua } from "./interfaces/IAqua.sol";
 import { IShipHook } from "./interfaces/IShipHook.sol";
 import { Balance, BalanceLib } from "./libs/Balance.sol";
 
 /// @title Aqua - Shared Liquidity Layer
-contract Aqua is IAqua {
+contract Aqua is IAqua, ReentrancyGuardTransient {
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
     using BalanceLib for Balance;
@@ -50,7 +51,7 @@ contract Aqua is IAqua {
         address[] calldata tokens,
         uint256[] calldata amounts,
         uint8 hooks
-    ) external payable returns(bytes32 strategyHash) {
+    ) external payable nonReentrant returns(bytes32 strategyHash) {
         strategyHash = keccak256(strategy);
         uint8 tokensCount = tokens.length.toUint8();
         require(tokensCount != _DOCKED, MaxNumberOfTokensExceeded(tokensCount, _DOCKED));
