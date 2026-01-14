@@ -61,8 +61,11 @@ contract Aqua is IAqua, ReentrancyGuardTransient {
             require((hooks & HOOK_BEFORE) != 0, ETHSentWithoutBeforeHook());
         }
 
-        // beforeShip hook: called before balance storage (if HOOK_BEFORE flag set)
+        // beforeShip hook: called BEFORE balance storage (if HOOK_BEFORE flag set)
         // Use for: ETH wrapping, pre-validation, setup
+        // Note: If app doesn't implement IShipHook, this will revert. This is intentional -
+        // apps should only set HOOK_BEFORE if they implement the hook. No ERC-165 check
+        // is performed to save gas (~2600 gas saved per call).
         if ((hooks & HOOK_BEFORE) != 0) {
             bool success = IShipHook(app).beforeShip{value: msg.value}(
                 msg.sender,
@@ -70,6 +73,8 @@ contract Aqua is IAqua, ReentrancyGuardTransient {
                 tokens,
                 amounts
             );
+            // beforeShip returns bool to allow graceful failure signaling.
+            // Returning false triggers ShipHookFailed; reverting propagates the error.
             require(success, ShipHookFailed(app, HOOK_BEFORE));
         }
 
@@ -82,8 +87,12 @@ contract Aqua is IAqua, ReentrancyGuardTransient {
             emit Pushed(msg.sender, app, strategyHash, tokens[i], amounts[i]);
         }
 
-        // afterShip hook: called after balance storage (if HOOK_AFTER flag set)
+        // afterShip hook: called AFTER balance storage (if HOOK_AFTER flag set)
         // Use for: notifications, additional state setup, external calls
+        // Note: Unlike beforeShip, afterShip has no return value. This is intentional:
+        // - afterShip is for side effects, not validation
+        // - If it fails, it should revert (consistent with callback patterns)
+        // - Any revert here will roll back the entire transaction including balance storage
         if ((hooks & HOOK_AFTER) != 0) {
             IShipHook(app).afterShip(
                 msg.sender,
