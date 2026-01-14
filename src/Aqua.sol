@@ -44,14 +44,6 @@ contract Aqua is IAqua {
         balance1 = amount1;
     }
 
-    /// @notice Thrown when a ship hook fails
-    /// @param app The app address that failed the hook
-    /// @param hookType 1 = beforeShip, 2 = afterShip
-    error ShipHookFailed(address app, uint8 hookType);
-
-    /// @notice Thrown when ETH is sent but HOOK_BEFORE flag is not set
-    error ETHSentWithoutBeforeHook();
-
     function ship(
         address app,
         bytes calldata strategy,
