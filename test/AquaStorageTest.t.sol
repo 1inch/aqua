@@ -58,7 +58,8 @@ contract AquaStorageTest is Test {
             address(this),
             "strategy",
             dynamic([address(token1)]),
-            dynamic([uint256(1000e18)])
+            dynamic([uint256(1000e18)]),
+            0
         );
 
         // Test push storage operations
@@ -77,7 +78,8 @@ contract AquaStorageTest is Test {
             address(this),
             "strategy",
             dynamic([address(token1)]),
-            dynamic([uint256(1000e18)])
+            dynamic([uint256(1000e18)]),
+            0
         );
 
         // Test pull storage operations (called directly from test contract acting as app)
@@ -97,7 +99,8 @@ contract AquaStorageTest is Test {
             address(this),
             "ship1",
             dynamic([address(token1)]),
-            dynamic([uint256(100e18)])
+            dynamic([uint256(100e18)]),
+            0
         );
 
         (bytes32[] memory reads, bytes32[] memory writes) = vm.accesses(address(aqua));
@@ -111,7 +114,8 @@ contract AquaStorageTest is Test {
             address(this),
             "ship2",
             dynamic([address(token1), address(token2)]),
-            dynamic([uint256(100e18), uint256(200e18)])
+            dynamic([uint256(100e18), uint256(200e18)]),
+            0
         );
 
         (bytes32[] memory reads, bytes32[] memory writes) = vm.accesses(address(aqua));
@@ -125,7 +129,8 @@ contract AquaStorageTest is Test {
             address(this),
             "ship3",
             dynamic([address(token1), address(token2), address(token3)]),
-            dynamic([uint256(100e18), uint256(200e18), uint256(300e18)])
+            dynamic([uint256(100e18), uint256(200e18), uint256(300e18)]),
+            0
         );
 
         (bytes32[] memory reads, bytes32[] memory writes) = vm.accesses(address(aqua));
@@ -141,7 +146,8 @@ contract AquaStorageTest is Test {
             address(this),
             "dock1",
             dynamic([address(token1)]),
-            dynamic([uint256(100e18)])
+            dynamic([uint256(100e18)]),
+            0
         );
 
         // Test dock storage operations
@@ -164,7 +170,8 @@ contract AquaStorageTest is Test {
             address(this),
             "dock2",
             dynamic([address(token1), address(token2)]),
-            dynamic([uint256(100e18), uint256(200e18)])
+            dynamic([uint256(100e18), uint256(200e18)]),
+            0
         );
 
         // Test dock storage operations
@@ -187,7 +194,8 @@ contract AquaStorageTest is Test {
             address(this),
             "dock3",
             dynamic([address(token1), address(token2), address(token3)]),
-            dynamic([uint256(100e18), uint256(200e18), uint256(300e18)])
+            dynamic([uint256(100e18), uint256(200e18), uint256(300e18)]),
+            0
         );
 
         // Test dock storage operations
