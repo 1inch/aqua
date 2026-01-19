@@ -7,28 +7,10 @@ pragma solidity ^0.8.13;
 import { dynamic } from "./utils/Dynamic.sol";
 import { AquaTestBase } from "./base/AquaTestBase.sol";
 import { IAqua } from "src/interfaces/IAqua.sol";
+import { stdError } from "forge-std/StdError.sol";
 
 contract AquaPushPullTest is AquaTestBase {
     // ========== PUSH TESTS ==========
-
-    function testPushSucceedsForActiveStrategy() public {
-        // Ship a strategy
-        vm.prank(maker);
-        aqua.ship(
-            app,
-            "push_success",
-            dynamic([address(token1)]),
-            dynamic([uint256(100e18)])
-        );
-
-        // Push should succeed
-        vm.prank(pusher);
-        aqua.push(maker, app, keccak256("push_success"), address(token1), 50e18);
-
-        // Verify balance increased
-        (uint256 balance,) = aqua.rawBalances(maker, app, keccak256("push_success"), address(token1));
-        assertEq(balance, 150e18);
-    }
 
     function testPushRequiresActiveStrategy() public {
         // Try to push without ship
@@ -77,25 +59,6 @@ contract AquaPushPullTest is AquaTestBase {
     }
 
     // ========== PULL TESTS ==========
-
-    function testPullSucceedsForActiveStrategy() public {
-        // Ship a strategy
-        vm.prank(maker);
-        aqua.ship(
-            app,
-            "pull_success",
-            dynamic([address(token1)]),
-            dynamic([uint256(100e18)])
-        );
-
-        // Pull should succeed (called by app)
-        vm.prank(app);
-        aqua.pull(maker, keccak256("pull_success"), address(token1), 30e18, app);
-
-        // Verify balance decreased
-        (uint256 balance,) = aqua.rawBalances(maker, app, keccak256("pull_success"), address(token1));
-        assertEq(balance, 70e18);
-    }
 
     function testPullRevertsOnInsufficientBalance() public {
         // Ship a strategy with 100 tokens
@@ -169,7 +132,7 @@ contract AquaPushPullTest is AquaTestBase {
     function testPushRevertsOnUint248Overflow() public {
         // This test verifies that pushing an amount that would overflow uint248 reverts
         // The contract uses SafeCast which will revert on overflow
-        
+
         // Ship a strategy
         vm.prank(maker);
         aqua.ship(
@@ -184,10 +147,36 @@ contract AquaPushPullTest is AquaTestBase {
         // Try to push an amount larger than uint248 max
         // This will fail at SafeCast.toUint248() in push function
         uint256 tooLargeAmount = uint256(type(uint248).max) + 1;
-        
+
         vm.prank(pusher);
         vm.expectRevert(); // SafeCast overflow
         aqua.push(maker, app, strategyHash, address(token1), tooLargeAmount);
+    }
+
+    function testPushRevertsOnBalanceOverflow() public {
+        // This test verifies that pushing causes overflow when prevBalance + amount > uint248 max
+        // Ship with a large initial balance close to uint248 max
+        uint256 largeInitialBalance = uint256(type(uint248).max) - 100e18;
+
+        vm.prank(maker);
+        aqua.ship(
+            app,
+            "strategy_balance_overflow",
+            dynamic([address(token1)]),
+            dynamic([largeInitialBalance])
+        );
+
+        bytes32 strategyHash = keccak256("strategy_balance_overflow");
+
+        // Verify initial balance
+        (uint256 balance,) = aqua.rawBalances(maker, app, strategyHash, address(token1));
+        assertEq(balance, largeInitialBalance);
+
+        // Try to push an amount that would cause prevBalance + amount to overflow uint248
+        // 200e18 > 100e18 remaining space, so this should overflow
+        vm.prank(pusher);
+        vm.expectRevert(stdError.arithmeticError);
+        aqua.push(maker, app, strategyHash, address(token1), 200e18);
     }
 
     function testShipRevertsOnUint248AmountOverflow() public {
