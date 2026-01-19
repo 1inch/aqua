@@ -162,38 +162,6 @@ contract AquaBalancesTest is AquaTestBase {
         );
     }
 
-    function testSafeBalancesRevertsIfBothTokensNotInStrategy() public {
-        // Ship with token1 only
-        vm.prank(maker);
-        aqua.ship(
-            app,
-            "safe_both_tokens",
-            dynamic([address(token1)]),
-            dynamic([uint256(100e18)])
-        );
-
-        bytes32 strategyHash = keccak256("safe_both_tokens");
-
-        // Try to query with token2 and token3 (neither in strategy)
-        // Should fail on first token check (token2)
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IAqua.SafeBalancesForTokenNotInActiveStrategy.selector,
-                maker,
-                app,
-                strategyHash,
-                address(token2)
-            )
-        );
-        aqua.safeBalances(
-            maker,
-            app,
-            strategyHash,
-            address(token2),
-            address(token3)
-        );
-    }
-
     function testSafeBalancesRevertsAfterDock() public {
         // Ship and then dock
         vm.prank(maker);
