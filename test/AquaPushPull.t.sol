@@ -72,14 +72,14 @@ contract AquaPushPullTest is AquaTestBase {
 
         // Try to pull more than available - should revert (arithmetic underflow)
         vm.prank(app);
-        vm.expectRevert(); // SafeCast or arithmetic underflow
+        vm.expectRevert(stdError.arithmeticError);
         aqua.pull(maker, keccak256("pull_underflow"), address(token1), 150e18, app);
     }
 
     function testPullFromNonExistentStrategy() public {
         // Pull from non-existent strategy - balance is 0, so any pull amount will underflow
         vm.prank(app);
-        vm.expectRevert(); // Arithmetic underflow
+        vm.expectRevert(stdError.arithmeticError);
         aqua.pull(maker, keccak256("nonexistent_pull"), address(token1), 1e18, app);
     }
 
@@ -102,7 +102,7 @@ contract AquaPushPullTest is AquaTestBase {
 
         // Try to pull after dock - balance is 0, so will underflow
         vm.prank(app);
-        vm.expectRevert(); // Arithmetic underflow
+        vm.expectRevert(stdError.arithmeticError);
         aqua.pull(maker, keccak256("pull_docked"), address(token1), 50e18, app);
     }
 
