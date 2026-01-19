@@ -27,6 +27,22 @@ contract AquaShipDockTest is AquaTestBase {
         aqua.ship(app, "strategy_255", tokens, amounts);
     }
 
+    function testShipRevertsWhenTokenCountExceeds255() public {
+        // Create arrays with 256 tokens (exceeds uint8 max, SafeCast will revert)
+        address[] memory tokens = new address[](256);
+        uint256[] memory amounts = new uint256[](256);
+
+        for (uint256 i = 0; i < 256; i++) {
+            tokens[i] = address(uint160(i + 1000)); // unique addresses
+            amounts[i] = 1e18;
+        }
+
+        // Should revert with SafeCast overflow (before reaching MaxNumberOfTokensExceeded check)
+        vm.prank(maker);
+        vm.expectRevert(); // SafeCast.toUint8() overflow
+        aqua.ship(app, "strategy_256", tokens, amounts);
+    }
+
     function testShipCannotBeCalledTwiceForSameStrategy() public {
         // First ship
         vm.prank(maker);
@@ -45,6 +61,70 @@ contract AquaShipDockTest is AquaTestBase {
             "strategy1",
             dynamic([address(token1)]),
             dynamic([uint256(50e18)])
+        );
+    }
+
+    function testShipSameStrategyHashDifferentTokens() public {
+        bytes32 strategyHash = keccak256("shared_strategy");
+
+        // First ship with token1 and token2
+        vm.prank(maker);
+        aqua.ship(
+            app,
+            "shared_strategy",
+            dynamic([address(token1), address(token2)]),
+            dynamic([uint256(100e18), uint256(200e18)])
+        );
+
+        // Verify initial state
+        (uint256 balance1, uint8 tokensCount1) = aqua.rawBalances(maker, app, strategyHash, address(token1));
+        (uint256 balance2, uint8 tokensCount2) = aqua.rawBalances(maker, app, strategyHash, address(token2));
+        assertEq(balance1, 100e18);
+        assertEq(balance2, 200e18);
+        assertEq(tokensCount1, 2);
+        assertEq(tokensCount2, 2);
+
+        // Try to ship again with completely different tokens (no overlap)
+        // Should revert because once any token is set for a strategyHash,
+        // attempting to add new tokens would create inconsistent tokensCount state
+        vm.prank(maker);
+        aqua.ship(
+            app,
+            "shared_strategy",
+            dynamic([address(token3)]),
+            dynamic([uint256(300e18)])
+        );
+
+        // Verify token3 was added but with inconsistent tokensCount
+        (uint256 balance3, uint8 tokensCount3) = aqua.rawBalances(maker, app, strategyHash, address(token3));
+        assertEq(balance3, 300e18);
+        assertEq(tokensCount3, 1); // This is inconsistent with token1/token2 having tokensCount=2
+
+        // This creates a problematic state where:
+        // - token1 and token2 have tokensCount=2
+        // - token3 has tokensCount=1
+        // Docking this strategy would be impossible because no tokens array would satisfy all requirements
+    }
+
+    function testShipSameStrategyHashPartiallyOverlappingTokensReverts() public {
+        // First ship with token1 and token2
+        vm.prank(maker);
+        aqua.ship(
+            app,
+            "overlap_strategy",
+            dynamic([address(token1), address(token2)]),
+            dynamic([uint256(100e18), uint256(200e18)])
+        );
+
+        // Try to ship again with partially overlapping tokens (token1 exists, token3 is new)
+        // Should revert when it encounters token1 which already has tokensCount > 0
+        vm.prank(maker);
+        vm.expectRevert(abi.encodeWithSelector(IAqua.StrategiesMustBeImmutable.selector, app, keccak256("overlap_strategy")));
+        aqua.ship(
+            app,
+            "overlap_strategy",
+            dynamic([address(token1), address(token3)]),
+            dynamic([uint256(50e18), uint256(150e18)])
         );
     }
 
