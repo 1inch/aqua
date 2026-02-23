@@ -21,7 +21,7 @@ REGOP_ENV_PK:=$(PREFIX)_PRIVATE_KEY
 RPC_URL=$(shell echo "$${!REGOP_ENV_RPC_URL}" | tr -d '"')
 PRIVATE_KEY=$(shell echo "$${!REGOP_ENV_PK}" | tr -d '"')
 
-COMPILER_VERSION:=$(shell cat foundry.toml | grep 'solc-version =' | head -1 | awk -F'"' '{print $$2}')
+COMPILER_VERSION:=$(shell grep -oP "version:\s*\"\K[^\"]*" hardhat.config.ts | head -1)
 
 deploy-aqua-router:
 	@$(MAKE) FILE_DEPLOY_NAME=AquaRouter validate-aqua-router deploy-aqua-router-impl save-deployments
