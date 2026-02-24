@@ -21,9 +21,10 @@ contract AquaShipDockTest is AquaTestBase {
             amounts[i] = 1e18;
         }
 
-        // Should revert with MaxNumberOfTokensExceeded
+        // Should revert with MaxNumberOfTokensExceeded(255, 254)
+        // The actual maximum allowed is 254 (_DOCKED - 1)
         vm.prank(maker);
-        vm.expectRevert(abi.encodeWithSelector(IAqua.MaxNumberOfTokensExceeded.selector, 255, 255));
+        vm.expectRevert(abi.encodeWithSelector(IAqua.MaxNumberOfTokensExceeded.selector, 255, 254));
         aqua.ship(app, "strategy_255", tokens, amounts);
     }
 

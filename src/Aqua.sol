@@ -40,7 +40,7 @@ contract Aqua is IAqua {
     function ship(address app, bytes calldata strategy, address[] calldata tokens, uint256[] calldata amounts) external returns(bytes32 strategyHash) {
         strategyHash = keccak256(strategy);
         uint8 tokensCount = tokens.length.toUint8();
-        require(tokensCount != _DOCKED, MaxNumberOfTokensExceeded(tokensCount, _DOCKED));
+        require(tokensCount != _DOCKED, MaxNumberOfTokensExceeded(tokensCount, _DOCKED - 1));
 
         emit Shipped(msg.sender, app, strategyHash, strategy);
         for (uint256 i = 0; i < tokens.length; i++) {
