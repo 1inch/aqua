@@ -262,7 +262,7 @@ function swap(
     uint256 amountIn
 )
     external
-    nonReentrantStrategy(keccak256(abi.encode(strategy)))
+    nonReentrantStrategy(strategy.maker, keccak256(abi.encode(strategy)))
     returns (uint256 amountOut)
 {
     bytes32 strategyHash = keccak256(abi.encode(strategy));
@@ -453,11 +453,11 @@ function safeBalances(
 // Immutable reference to Aqua registry
 IAqua public immutable AQUA;
 
-// Reentrancy locks per strategy (strategyHash already includes maker)
-mapping(bytes32 strategyHash => TransientLock) internal _reentrancyLocks;
+// Reentrancy locks per maker and strategy
+mapping(address maker => mapping(bytes32 strategyHash => TransientLock)) internal _reentrancyLocks;
 
 // Convenient modifier for reentrancy protection
-modifier nonReentrantStrategy(bytes32 strategyHash);
+modifier nonReentrantStrategy(address maker, bytes32 strategyHash);
 
 // Helper to verify taker deposited tokens (requires reentrancy protection)
 function _safeCheckAquaPush(
