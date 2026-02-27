@@ -7,8 +7,8 @@ pragma solidity ^0.8.13;
 import { Test } from "forge-std/Test.sol";
 import { dynamic } from "../utils/Dynamic.sol";
 import { MockToken } from "../mock/ERC20.sol";
-import { Aqua } from "src/Aqua.sol";
-import { IAqua } from "src/interfaces/IAqua.sol";
+import { Aqua } from "../../src/Aqua.sol";
+import { IAqua } from "../../src/interfaces/IAqua.sol";
 
 abstract contract AquaTestBase is Test {
     Aqua public aqua;

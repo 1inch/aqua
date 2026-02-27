@@ -6,7 +6,7 @@ pragma solidity ^0.8.13;
 
 import { dynamic } from "./utils/Dynamic.sol";
 import { AquaTestBase } from "./base/AquaTestBase.sol";
-import { IAqua } from "src/interfaces/IAqua.sol";
+import { IAqua } from "../src/interfaces/IAqua.sol";
 
 contract AquaBalancesTest is AquaTestBase {
     // ========== RAW BALANCES TESTS ==========

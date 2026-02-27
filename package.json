@@ -1,6 +1,7 @@
 {
   "name": "@1inch/aqua",
   "version": "0.0.9",
+  "type": "module",
   "description": "Shared liquidity layer protocol",
   "main": "index.js",
   "directories": {
@@ -11,11 +12,18 @@
     "@1inch/solidity-utils": "6.9.2",
     "@openzeppelin/contracts": "5.4.0"
   },
+  "devDependencies": {
+    "hardhat": "^3.1.10",
+    "patch-package": "^8.0.0"
+  },
   "resolutions": {
     "elliptic": "6.6.1"
   },
   "scripts": {
+    "postinstall": "patch-package",
     "test": "forge test",
+    "test-hardhat": "npx hardhat test solidity",
+    "build-hardhat": "npx hardhat compile",
     "snapshot": "forge snapshot --no-match-test \"testFuzz_*\""
   },
   "repository": {
