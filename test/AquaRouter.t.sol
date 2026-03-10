@@ -9,9 +9,7 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 import { AquaRouter } from "src/AquaRouter.sol";
 
-// @dev AquaRouterTest tests the constructor of the AquaRouter contract
-// minimal tests to ensure the constructor sets the owner correctly and reverts with a zero address
-// since Rescuable is used, we don't need to test the rescue functionality
+/// @dev Minimal constructor tests for AquaRouter: verifies owner is set correctly and zero address reverts.
 contract AquaRouterTest is Test {
     function test_ConstructorSetsOwner() public {
         address owner = address(0xBEEF);

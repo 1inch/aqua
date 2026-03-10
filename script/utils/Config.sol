@@ -9,9 +9,15 @@ import { Vm } from "forge-std/Vm.sol";
 // solhint-disable no-console
 import { console2 } from "forge-std/console2.sol";
 
+/// @title Config - Deploy parameter reader for Aqua contracts
+/// @notice Reads chain-specific deploy parameters from config/constants.json
 library Config {
+    /// @dev Thrown when the owner address is missing or zero for the current chain ID.
     error OwnerAddressDoesNotExist();
 
+    /// @notice Reads AquaRouter constructor parameters from the JSON config.
+    /// @param vm The Forge Vm instance used for file and JSON operations.
+    /// @return owner The owner address for Rescuable access control.
     function readAquaRouterParameters(Vm vm) internal view returns (
         address owner
     ) {
