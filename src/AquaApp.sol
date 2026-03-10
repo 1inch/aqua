@@ -10,9 +10,8 @@ import { IAqua } from "./interfaces/IAqua.sol";
 
 /// @title AquaApp - Base contract for Aqua applications
 /// @notice Using _safeCheckAquaPush() requires using one of the followings reentrancy protections on swap methods:
-///         - modifier nonReentrantStrategy(keccak256(abi.encode(strategy)))
-///         - modifier nonReentrantLock(_reentrancyLocks[strategyHash])
-///         - code _reentrancyLocks[strategyHash].lock(); ... _reentrancyLocks[strategyHash].unlock();
+///         - modifier nonReentrantStrategy(maker, strategyHash)
+///         - code _reentrancyLocks[maker][strategyHash].lock(); ... _reentrancyLocks[maker][strategyHash].unlock();
 abstract contract AquaApp {
     using TransientLockLib for TransientLock;
 
