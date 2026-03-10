@@ -6,15 +6,23 @@ pragma solidity 0.8.30;
 
 import { Script } from "forge-std/Script.sol";
 
+import { Config } from "./utils/Config.sol";
+
 import { AquaRouter } from "../src/AquaRouter.sol";
 
 // solhint-disable no-console
 import { console2 } from "forge-std/console2.sol";
 
 contract DeployAquaRouter is Script {
+    using Config for *;
+
     function run() external {
+        (
+            address owner
+        ) = vm.readAquaRouterParameters();
+
         vm.startBroadcast();
-        AquaRouter aquaRouter = new AquaRouter();
+        AquaRouter aquaRouter = new AquaRouter(owner);
         vm.stopBroadcast();
 
         console2.log("AquaRouter deployed at: ", address(aquaRouter));
