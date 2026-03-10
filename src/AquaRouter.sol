@@ -14,7 +14,8 @@ import { Aqua } from "./Aqua.sol";
 /// @notice Combines Aqua core functionality with Simulator for gas estimation, Multicall for batched operations, and Rescuable for token recovery
 /// @dev This is the recommended contract to deploy for production use
 contract AquaRouter is Aqua, Simulator, Multicall, Rescuable {
+
+    /// @notice owner is used only to rescue funds
     /// @param owner The owner of the contract, the reciever of the rescued funds, authorized to rescue stuck tokens and ETH
-    /// @dev owner is used only to rescue funds
     constructor(address owner) Rescuable(owner) { }
 }
