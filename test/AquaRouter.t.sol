@@ -5,20 +5,26 @@ pragma solidity 0.8.30;
 /// @custom:copyright © 2025 Degensoft Ltd
 
 import { Test } from "forge-std/Test.sol";
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import { AquaRouter } from "src/AquaRouter.sol";
+import { MockToken } from "./mock/ERC20.sol";
 
-/// @dev Minimal constructor tests for AquaRouter: verifies owner is set correctly and zero address reverts.
+/// @dev Smoke test: verifies rescueFunds works on the real AquaRouter.
+/// Constructor and Rescuable logic are covered in solidity-utils.
 contract AquaRouterTest is Test {
-    function test_ConstructorSetsOwner() public {
+    function test_RescueFundsERC20() public {
         address owner = address(0xBEEF);
         AquaRouter router = new AquaRouter(owner);
-        assertEq(router.owner(), owner);
-    }
+        MockToken token = new MockToken("Stuck");
 
-    function test_ConstructorRevertsWithZeroAddress() public {
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableInvalidOwner.selector, address(0)));
-        new AquaRouter(address(0));
+        uint256 amount = 100e18;
+        token.transfer(address(router), amount);
+
+        vm.prank(owner);
+        router.rescueFunds(IERC20(address(token)), amount);
+
+        assertEq(token.balanceOf(owner), amount);
+        assertEq(token.balanceOf(address(router)), 0);
     }
 }
