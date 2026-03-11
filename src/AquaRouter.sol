@@ -13,6 +13,7 @@ import { Aqua } from "./Aqua.sol";
 /// @title AquaRouter - Main deployment entry point for Aqua protocol
 /// @notice Combines Aqua core functionality with Simulator for gas estimation, Multicall for batched operations, and Rescuable for token recovery
 /// @dev This is the recommended contract to deploy for production use
+/// @dev This contract is Ownable via Rescuable mixin
 contract AquaRouter is Aqua, Simulator, Multicall, Rescuable {
 
     /// @notice owner is used only to rescue funds
