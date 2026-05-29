@@ -20,7 +20,7 @@
     "@openzeppelin/contracts": "5.4.0"
   },
   "scripts": {
-    "test": "forge test",
+    "test": "npx hardhat test solidity",
     "snapshot": "forge snapshot --no-match-test \"testFuzz_*\""
   },
   "repository": {
