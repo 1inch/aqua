@@ -13,7 +13,9 @@
     "@openzeppelin/contracts": "5.4.0"
   },
   "devDependencies": {
-    "hardhat": "^3.7.0"
+    "hardhat": "^3.7.0",
+    "prettier": "3.8.3",
+    "prettier-plugin-solidity": "2.3.1"
   },
   "resolutions": {
     "elliptic": "6.6.1",
@@ -22,7 +24,9 @@
   "scripts": {
     "test": "npx hardhat test solidity",
     "snapshot": "npx hardhat test solidity --snapshot",
-    "snapshot:check": "npx hardhat test solidity --snapshot-check"
+    "snapshot:check": "npx hardhat test solidity --snapshot-check",
+    "format": "prettier --write \"{src,test,script,examples}/**/*.sol\"",
+    "lint": "prettier --check \"{src,test,script,examples}/**/*.sol\""
   },
   "repository": {
     "type": "git",

@@ -161,11 +161,11 @@ snapshot :; forge snapshot --no-match-test "testFuzz_*"
 
 snapshot-check :; forge snapshot --check --no-match-test "testFuzz_*"
 
-format :; forge fmt
+format :; yarn format
 
 clean :; forge clean
 
-lint :; forge fmt --check
+lint :; yarn lint
 
 anvil :;  anvil --fork-url $(NODE_URL) --steps-tracing --chain-id $(OPS_CHAIN_ID) --host 127.0.0.1 --port 8546 -vvvvv
 
