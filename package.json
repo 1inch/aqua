@@ -21,7 +21,8 @@
   },
   "scripts": {
     "test": "npx hardhat test solidity",
-    "snapshot": "npx hardhat test solidity --snapshot"
+    "snapshot": "npx hardhat test solidity --snapshot",
+    "snapshot:check": "npx hardhat test solidity --snapshot-check"
   },
   "repository": {
     "type": "git",
