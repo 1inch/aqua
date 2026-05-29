@@ -9,18 +9,12 @@ import { StorageAccesses } from "./utils/StorageAccesses.sol";
 import { AquaTestBase } from "./base/AquaTestBase.sol";
 
 contract AquaStorageTest is AquaTestBase {
-
     // ========== PUSH/PULL STORAGE TESTS ==========
 
     function testPushSingleSloadSstore() public {
         // Initialize strategy with ship
         vm.prank(maker);
-        aqua.ship(
-            address(this),
-            "strategy",
-            dynamic([address(token1)]),
-            dynamic([uint256(1000e18)])
-        );
+        aqua.ship(address(this), "strategy", dynamic([address(token1)]), dynamic([uint256(1000e18)]));
 
         // Test push storage operations
         vm.record();
@@ -34,12 +28,7 @@ contract AquaStorageTest is AquaTestBase {
     function testPullSingleSloadSstore() public {
         // Initialize strategy with ship
         vm.prank(maker);
-        aqua.ship(
-            address(this),
-            "strategy",
-            dynamic([address(token1)]),
-            dynamic([uint256(1000e18)])
-        );
+        aqua.ship(address(this), "strategy", dynamic([address(token1)]), dynamic([uint256(1000e18)]));
 
         // Test pull storage operations (called directly from test contract acting as app)
         vm.record();
@@ -54,12 +43,7 @@ contract AquaStorageTest is AquaTestBase {
     function testShip1Token() public {
         vm.record();
         vm.prank(maker);
-        aqua.ship(
-            address(this),
-            "ship1",
-            dynamic([address(token1)]),
-            dynamic([uint256(100e18)])
-        );
+        aqua.ship(address(this), "ship1", dynamic([address(token1)]), dynamic([uint256(100e18)]));
 
         (bytes32[] memory reads, bytes32[] memory writes) = vm.accesses(address(aqua));
         StorageAccesses.assertEq(vm, 1, 1, reads, writes, "Ship 1 token");
@@ -98,21 +82,12 @@ contract AquaStorageTest is AquaTestBase {
     function testDock1Token() public {
         // First ship
         vm.prank(maker);
-        aqua.ship(
-            address(this),
-            "dock1",
-            dynamic([address(token1)]),
-            dynamic([uint256(100e18)])
-        );
+        aqua.ship(address(this), "dock1", dynamic([address(token1)]), dynamic([uint256(100e18)]));
 
         // Test dock storage operations
         vm.prank(maker);
         vm.record();
-        aqua.dock(
-            address(this),
-            keccak256("dock1"),
-            dynamic([address(token1)])
-        );
+        aqua.dock(address(this), keccak256("dock1"), dynamic([address(token1)]));
 
         (bytes32[] memory reads, bytes32[] memory writes) = vm.accesses(address(aqua));
         StorageAccesses.assertEq(vm, 1, 1, reads, writes, "Dock 1 token");
@@ -131,11 +106,7 @@ contract AquaStorageTest is AquaTestBase {
         // Test dock storage operations
         vm.record();
         vm.prank(maker);
-        aqua.dock(
-            address(this),
-            keccak256("dock2"),
-            dynamic([address(token1), address(token2)])
-        );
+        aqua.dock(address(this), keccak256("dock2"), dynamic([address(token1), address(token2)]));
 
         (bytes32[] memory reads, bytes32[] memory writes) = vm.accesses(address(aqua));
         StorageAccesses.assertEq(vm, 2, 2, reads, writes, "Dock 2 tokens");
@@ -154,11 +125,7 @@ contract AquaStorageTest is AquaTestBase {
         // Test dock storage operations
         vm.record();
         vm.prank(maker);
-        aqua.dock(
-            address(this),
-            keccak256("dock3"),
-            dynamic([address(token1), address(token2), address(token3)])
-        );
+        aqua.dock(address(this), keccak256("dock3"), dynamic([address(token1), address(token2), address(token3)]));
 
         (bytes32[] memory reads, bytes32[] memory writes) = vm.accesses(address(aqua));
         StorageAccesses.assertEq(vm, 3, 3, reads, writes, "Dock 3 tokens");
