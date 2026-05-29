@@ -21,7 +21,7 @@
   },
   "scripts": {
     "test": "npx hardhat test solidity",
-    "snapshot": "forge snapshot --no-match-test \"testFuzz_*\""
+    "snapshot": "npx hardhat test solidity --snapshot"
   },
   "repository": {
     "type": "git",
