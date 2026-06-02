@@ -1,4 +1,6 @@
 import { defineConfig } from "hardhat/config";
+import hardhatIgnition from "@nomicfoundation/hardhat-ignition";
+import hardhatIgnoreWarnings from "hardhat-ignore-warnings";
 
 const aquaCompilerSettings = {
   version: "0.8.30",
@@ -12,6 +14,7 @@ const aquaCompilerSettings = {
 };
 
 export default defineConfig({
+  plugins: [hardhatIgnition, hardhatIgnoreWarnings],
   solidity: {
     profiles: {
       default: { compilers: [aquaCompilerSettings] },
@@ -26,6 +29,14 @@ export default defineConfig({
       fsPermissions: {
         dangerouslyReadWriteDirectory: ["./deployments", "./config"],
       },
+    },
+  },
+  warnings: {
+    "test/**/*": {
+      "code-size": "off",
+    },
+    "npm/@1inch/**/*": {
+      "transient-storage": "off",
     },
   },
 });
