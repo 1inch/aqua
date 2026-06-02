@@ -13,14 +13,23 @@
     "@openzeppelin/contracts": "5.4.0"
   },
   "devDependencies": {
-    "hardhat": "^3.7.0",
+    "@nomicfoundation/hardhat-ignition-viem": "3.1.6",
+    "@nomicfoundation/hardhat-ignition": "3.1.7",
+    "@nomicfoundation/hardhat-keystore": "3.0.12",
+    "@nomicfoundation/hardhat-verify": "3.0.19",
+    "@nomicfoundation/hardhat-viem": "3.0.9",
+    "hardhat": "3.8.0",
     "hardhat-ignore-warnings": "0.3.0",
     "prettier": "3.8.3",
-    "prettier-plugin-solidity": "2.3.1"
+    "prettier-plugin-solidity": "2.3.1",
+    "viem": "2.52.0",
+    "@noble/hashes": "1.8.0"
   },
   "resolutions": {
     "elliptic": "6.6.1",
-    "@openzeppelin/contracts": "5.4.0"
+    "@openzeppelin/contracts": "5.4.0",
+    "viem/@noble/hashes": "1.8.0",
+    "viem/@noble/curves/@noble/hashes": "1.8.0"
   },
   "scripts": {
     "build": "npx hardhat build",

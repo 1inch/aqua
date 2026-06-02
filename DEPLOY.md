@@ -1,108 +1,71 @@
-# SwapVM Deployment Guide
+# Aqua Deployment Guide
 
-This guide describes how to deploy Aqua contracts using the Makefile-based deployment system.
+Aqua is deployed with [Hardhat Ignition](https://hardhat.org/ignition) and verified with `hardhat-verify`.
 
 ## Prerequisites
 
-Before deploying, ensure you have the following installed:
+- Node.js + Yarn (`yarn install`)
+- A funded deployer key and an RPC URL for the target network
+- For verification: an Etherscan API key (v2 — a single key works across all chains)
 
-- [Foundry](https://book.getfoundry.sh/getting-started/installation) (includes `forge`, `cast`, and `anvil`)
-- Make (usually pre-installed on Unix systems)
-- jq (JSON processor for parsing deployment outputs)
-- A funded wallet for gas fees
+## 1. Configure secrets (config variables)
 
-## Quick Start
+RPC URLs and the deployer private key are Hardhat **configuration variables**. Hardhat 3 does **not** auto-load `.env`; provide them either as environment variables of the same name, or via the encrypted keystore:
 
 ```bash
-# 1. Copy and configure environment file
-cp .env.example .env
+# Option A — environment variables
+export SEPOLIA_RPC_URL=https://...
+export SEPOLIA_PRIVATE_KEY=0x...
+export ETHERSCAN_API_KEY=...
 
-# 2. Set required environment variables
-# Edit .env file with your values
-
-# 3. Deploy standard AquaRouter
-make deploy-aqua-router
-
-# 4. Get AquaRouter deployment address
-make get PARAMETER=OPS_AQUA_ROUTER_ADDRESS
+# Option B — encrypted keystore (prompts for a password when the value is needed)
+npx hardhat keystore set SEPOLIA_RPC_URL
+npx hardhat keystore set SEPOLIA_PRIVATE_KEY
+npx hardhat keystore set ETHERSCAN_API_KEY
 ```
 
-## Environment Configuration
+Configured networks live in `hardhat.config.ts` (`localhost`, `sepolia`, `mainnet`); add more by copying the pattern. See `.env.example` for the full list of variable names.
 
-The deployment system uses environment variables that can be configured in two ways:
+## 2. Deploy
 
-### Manual Mode (Default)
-Create a `.env` file in the project root with the following variables:
+Deploy with `hardhat ignition` through a wrapped script that injects the `owner`:
 
 ```bash
-# Network Configuration
-OPS_NETWORK="localhost"          # Network name (e.g., mainnet, sepolia, localhost)
-OPS_CHAIN_ID="31337"            # Chain ID for the target network
-
-# Network-specific RPC and Private Key
-# Format: <NETWORK_NAME>_RPC_URL and <NETWORK_NAME>_PRIVATE_KEY
-LOCALHOST_RPC_URL=http://127.0.0.1:8546
-LOCALHOST_PRIVATE_KEY=0x...
-
-# For other networks, add corresponding entries:
-# MAINNET_RPC_URL="https://eth-mainnet.g.alchemy.com/v2/YOUR-KEY"
-# MAINNET_PRIVATE_KEY="0x..."
-# SEPOLIA_RPC_URL="https://eth-sepolia.g.alchemy.com/v2/YOUR-KEY"
-# SEPOLIA_PRIVATE_KEY="0x..."
+npx hardhat run ./script/deployAquaRouter.ts --network <network>
 ```
 
 ### Automation Mode (Automated deployment framework)
+
 For automated deployments .env.automation file will be created automatically and deployment is launched with:
 
 ```bash
 OPS_LAUNCH_MODE=auto make deploy-aqua-router
 ```
 
-## Deployment Commands
-
-### Main Deployment Targets
-
-| Command | Description | Contract |
-|---------|-------------|----------|
-| `make deploy-aqua-router` | Deploy standard AquaRouter | AquaRouter.sol |
-
 ### Deployment Artifacts
 
 Deployment information is saved in:
-- `broadcast/` - Forge deployment transactions
-- `deployments/<network>/` - Organized deployment files per network
+
+- `ignition/deployments/chain-<chainId>
 
 ## Helper Commands
 
 ### Development Tools
 
-| Command | Description |
-|---------|-------------|
-| `make build` | Compile all contracts |
-| `make tests` | Run test suite with gas reporting |
-| `make coverage` | Generate code coverage report |
-| `make snapshot` | Create gas snapshot |
-| `make format` | Format code using Forge formatter |
-| `make lint` | Check code formatting |
-| `make clean` | Clean build artifacts |
+| Command         | Description                       |
+| --------------- | --------------------------------- |
+| `make build`    | Compile all contracts             |
+| `make tests`    | Run test suite with gas reporting |
+| `make coverage` | Generate code coverage report     |
+| `make snapshot` | Create gas snapshot               |
+| `make format`   | Format code using Forge formatter |
+| `make lint`     | Check code formatting             |
+| `make clean`    | Clean build artifacts             |
 
 ### Local Development
 
-Start local Anvil fork:
-```bash
-make anvil NODE_URL=<your-rpc-url>
-```
-
-Define correct env variables:
+Start local development node fork:
 
 ```bash
-# define your network alias (e.g. localhost)
-OPS_NETWORK="localhost"
-# Use 31337 for local development
-OPS_CHAIN_ID="31337"
-
-# RPC URL for localhost network
-LOCALHOST_RPC_URL=http://localhost:8546
-# Replace with your own private key for localhost testing
-LOCALHOST_PRIVATE_KEY=0x
+make node NODE_URL=<your-rpc-url>
 ```

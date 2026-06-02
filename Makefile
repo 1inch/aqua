@@ -177,5 +177,5 @@ help:
 		@echo "Available targets:"
 		@grep -E '^[a-zA-Z0-9_.-]+:' $(CURRENT_DIR)/Makefile | grep -v '^\.' | awk -F: '{print "  " $$1}' | sort -u
 
-.PHONY: deploy-aqua-router deploy-aqua-router-impl verify-aqua-router verify-aqua-router-impl save-deployments contract-address validate-aqua-router validate \
+.PHONY: deploy-aqua-router deploy-aqua-router-ignition deploy-aqua-router-impl verify-aqua-router verify-aqua-router-impl save-deployments contract-address validate-aqua-router validate \
         get get-outputs update build tests coverage snapshot snapshot-check format clean lint anvil balance balance-erc20 help
