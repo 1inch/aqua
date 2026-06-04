@@ -23,6 +23,7 @@
     "@openzeppelin/contracts": "5.4.0"
   },
   "scripts": {
+    "build": "npx hardhat build",
     "test": "npx hardhat test solidity",
     "snapshot": "npx hardhat test solidity --snapshot",
     "snapshot:check": "npx hardhat test solidity --snapshot-check",
