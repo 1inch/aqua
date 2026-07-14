@@ -504,6 +504,7 @@ The Aqua Protocol is deployed across multiple networks at the same address:
 | Unichain | `0x499943e74fb0ce105688beee8ef2abec5d936d31` |
 | Gnosis | `0x499943e74fb0ce105688beee8ef2abec5d936d31` |
 | zkSync | `0x499943e74fb0ce105688beee8ef2abec5d936d31` |
+| Robinhood | `0x7c2d4aa5c900c08004fadb1c0d953c5b099fec86` |
 
 
 ## License
