@@ -24,17 +24,23 @@ contract Aqua is IAqua {
                 mapping(address token => Balance)))) private _balances; // aka makers' allowances
 
     function rawBalances(address maker, address app, bytes32 strategyHash, address token) external view returns (uint248 balance, uint8 tokensCount) {
-        return _balances[maker][app][strategyHash][token].load();
+        uint256 rawData;
+        (rawData, tokensCount) = _balances[maker][app][strategyHash][token].load();
+
+        balance = uint248(rawData);
     }
 
     function safeBalances(address maker, address app, bytes32 strategyHash, address token0, address token1) external view returns (uint256 balance0, uint256 balance1) {
-        (uint248 amount0, uint8 tokensCount0) = _balances[maker][app][strategyHash][token0].load();
-        require(tokensCount0 > 0 && tokensCount0 != _DOCKED, SafeBalancesForTokenNotInActiveStrategy(maker, app, strategyHash, token0));
-        balance0 = amount0;
+        mapping(address => Balance) storage strategyBalances = _balances[maker][app][strategyHash];
 
-        (uint248 amount1, uint8 tokensCount1) = _balances[maker][app][strategyHash][token1].load();
+        (uint256 rawData0, uint8 tokensCount0) = strategyBalances[token0].load();
+        require(tokensCount0 > 0 && tokensCount0 != _DOCKED, SafeBalancesForTokenNotInActiveStrategy(maker, app, strategyHash, token0));
+
+        (uint256 rawData1, uint8 tokensCount1) = strategyBalances[token1].load();
         require(tokensCount1 > 0 && tokensCount1 != _DOCKED, SafeBalancesForTokenNotInActiveStrategy(maker, app, strategyHash, token1));
-        balance1 = amount1;
+
+        balance0 = uint248(rawData0);
+        balance1 = uint248(rawData1);
     }
 
     function ship(address app, bytes calldata strategy, address[] calldata tokens, uint256[] calldata amounts) external returns(bytes32 strategyHash) {
@@ -43,10 +49,15 @@ contract Aqua is IAqua {
         require(tokensCount != _DOCKED, MaxNumberOfTokensExceeded(tokensCount, _DOCKED - 1));
 
         emit Shipped(msg.sender, app, strategyHash, strategy);
+
         for (uint256 i = 0; i < tokens.length; i++) {
             Balance storage balance = _balances[msg.sender][app][strategyHash][tokens[i]];
-            require(balance.tokensCount == 0, StrategiesMustBeImmutable(app, strategyHash));
-            balance.store(amounts[i].toUint248(), tokensCount);
+
+            (, uint8 currentTokensCount) = balance.load();
+            require(currentTokensCount == 0, StrategiesMustBeImmutable(app, strategyHash));
+
+            balance.set(amounts[i], tokensCount);
+
             emit Pushed(msg.sender, app, strategyHash, tokens[i], amounts[i]);
         }
     }
@@ -55,15 +66,16 @@ contract Aqua is IAqua {
         for (uint256 i = 0; i < tokens.length; i++) {
             Balance storage balance = _balances[msg.sender][app][strategyHash][tokens[i]];
             require(balance.tokensCount == tokens.length, DockingShouldCloseAllTokens(app, strategyHash));
-            balance.store(0, _DOCKED);
+            balance.set(0, _DOCKED);
         }
         emit Docked(msg.sender, app, strategyHash);
     }
 
     function pull(address maker, bytes32 strategyHash, address token, uint256 amount, address to) external {
         Balance storage balance = _balances[maker][msg.sender][strategyHash][token];
-        (uint248 prevBalance, uint8 tokensCount) = balance.load();
-        balance.store(prevBalance - amount.toUint248(), tokensCount);
+        (uint256 rawData,) = balance.load();
+
+        balance.decrease(rawData, amount);
 
         IERC20(token).safeTransferFrom(maker, to, amount);
         emit Pulled(maker, msg.sender, strategyHash, token, amount);
@@ -71,9 +83,12 @@ contract Aqua is IAqua {
 
     function push(address maker, address app, bytes32 strategyHash, address token, uint256 amount) external {
         Balance storage balance = _balances[maker][app][strategyHash][token];
-        (uint248 prevBalance, uint8 tokensCount) = balance.load();
-        require(tokensCount > 0 && tokensCount != _DOCKED, PushToNonActiveStrategyPrevented(maker, app, strategyHash, token));
-        balance.store(prevBalance + amount.toUint248(), tokensCount);
+        (uint256 rawData, uint8 tokensCount) = balance.load();
+        require(
+            tokensCount > 0 && tokensCount != _DOCKED, PushToNonActiveStrategyPrevented(maker, app, strategyHash, token)
+        );
+
+        balance.increase(rawData, amount);
 
         IERC20(token).safeTransferFrom(msg.sender, maker, amount);
         emit Pushed(maker, app, strategyHash, token, amount);
