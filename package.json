@@ -34,8 +34,8 @@
   "scripts": {
     "build": "npx hardhat build",
     "test": "npx hardhat test solidity",
-    "snapshot": "npx hardhat test solidity --snapshot",
-    "snapshot:check": "npx hardhat test solidity --snapshot-check",
+    "snapshot": "npx hardhat test solidity --snapshot --grep-exclude testFuzz",
+    "snapshot:check": "npx hardhat test solidity --snapshot-check --grep-exclude testFuzz",
     "format": "prettier --write \"{src,test,script,examples}/**/*.sol\"",
     "lint": "prettier --check \"{src,test,script,examples}/**/*.sol\""
   },
