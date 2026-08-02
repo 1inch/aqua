@@ -484,27 +484,16 @@ forge test
 
 ## Deployments
 
-The Aqua Protocol is deployed across multiple networks at the same address:
+Aqua and the SwapVM router are deterministic deployments with the same address on every supported chain. Only interact with these two contracts. Anything else is not Aqua.
 
-**Contract Address:** `0x499943e74fb0ce105688beee8ef2abec5d936d31`
+| Contract | Address |
+|----------|---------|
+| Aqua (registry) | `0x1111113ccf1426a8e30e2bff5e005d929bf6a90a` |
+| SwapVM router | `0x111111338c5091e8440b67b168bae16a668ac0de` |
 
 ### Supported Networks
 
-| Network | Contract Address |
-|---------|-----------------|
-| Ethereum Mainnet | `0x499943e74fb0ce105688beee8ef2abec5d936d31` |
-| Base | `0x499943e74fb0ce105688beee8ef2abec5d936d31` |
-| Optimism | `0x499943e74fb0ce105688beee8ef2abec5d936d31` |
-| Polygon | `0x499943e74fb0ce105688beee8ef2abec5d936d31` |
-| Arbitrum | `0x499943e74fb0ce105688beee8ef2abec5d936d31` |
-| Avalanche | `0x499943e74fb0ce105688beee8ef2abec5d936d31` |
-| Binance Smart Chain | `0x499943e74fb0ce105688beee8ef2abec5d936d31` |
-| Linea | `0x499943e74fb0ce105688beee8ef2abec5d936d31` |
-| Sonic | `0x499943e74fb0ce105688beee8ef2abec5d936d31` |
-| Unichain | `0x499943e74fb0ce105688beee8ef2abec5d936d31` |
-| Gnosis | `0x499943e74fb0ce105688beee8ef2abec5d936d31` |
-| zkSync | `0x499943e74fb0ce105688beee8ef2abec5d936d31` |
-| Robinhood | `0x7c2d4aa5c900c08004fadb1c0d953c5b099fec86` |
+Ethereum Mainnet, Base, Optimism, Polygon, Arbitrum, Avalanche, Binance Smart Chain, Linea, Sonic, Unichain, Gnosis, zkSync, Robinhood
 
 
 ## License
