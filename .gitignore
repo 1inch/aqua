@@ -11,4 +11,3 @@ build
 .env*
 !.env.example
 .yarn
-broadcast
