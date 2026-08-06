@@ -493,7 +493,7 @@ Aqua and the SwapVM router are deterministic deployments with the same address o
 
 ### Supported Networks
 
-Ethereum Mainnet, Base, Optimism, Polygon, Arbitrum, Avalanche, Binance Smart Chain, Linea, Sonic, Unichain, Gnosis, zkSync, Robinhood
+Ethereum Mainnet, Base, Optimism, Polygon, Arbitrum, Avalanche, Binance Smart Chain, Linea, Sonic, Unichain, Gnosis, zkSync, Robinhood, Cronos, Monad, HyperEVM
 
 
 ## License
