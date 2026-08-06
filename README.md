@@ -484,9 +484,11 @@ forge test
 
 ## Deployments
 
-The Aqua Protocol is deployed across multiple networks at the same address:
+The Aqua Protocol is deployed across multiple networks.
 
-**Contract Address:** `0x499943e74fb0ce105688beee8ef2abec5d936d31`
+**Most networks:** `0x499943e74fb0ce105688beee8ef2abec5d936d31`
+
+**Cronos / Monad / HyperEVM:** `0x1111113CCf1426A8E30e2bfF5E005d929bF6a90a`
 
 ### Supported Networks
 
@@ -504,6 +506,9 @@ The Aqua Protocol is deployed across multiple networks at the same address:
 | Unichain | `0x499943e74fb0ce105688beee8ef2abec5d936d31` |
 | Gnosis | `0x499943e74fb0ce105688beee8ef2abec5d936d31` |
 | zkSync | `0x499943e74fb0ce105688beee8ef2abec5d936d31` |
+| Cronos | `0x1111113CCf1426A8E30e2bfF5E005d929bF6a90a` |
+| Monad | `0x1111113CCf1426A8E30e2bfF5E005d929bF6a90a` |
+| HyperEVM | `0x1111113CCf1426A8E30e2bfF5E005d929bF6a90a` |
 
 
 ## License
