@@ -6,7 +6,7 @@ pragma solidity ^0.8.13;
 
 import { Test, console } from "forge-std/Test.sol";
 import { dynamic } from "test/utils/Dynamic.sol";
-
+import { stdError } from "forge-std/StdError.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
@@ -227,17 +227,14 @@ contract XYCSwapTest is Test, TestCallback {
         uint256 largePricePerToken = (largeAmountOut * 1000) / largeAmountIn;
 
         // Verify specific values
-        assertEq(smallAmountOut, 3, "Small swap should output 3 tokens");
-        assertEq(largeAmountOut, 13, "Large swap should output 13 tokens");
+        assertEq(smallAmountOut, 4, "Small swap should output 4 tokens");
+        assertEq(largeAmountOut, 14, "Large swap should output 14 tokens");
 
-        // Larger swap should have worse price (less output per input)
-        // Small: 3 * 1000 / 5 = 600
-        // Large: 13 * 1000 / 20 = 650
-        // Actually with these values, the large swap has a slightly better price per token
-        // This is because the fee impact is proportionally less significant on larger amounts
-        // Let's verify the actual price impact
+        // Small: 4 * 1000 / 5 = 800
+        // Large: 14 * 1000 / 20 = 700
         assertTrue(
-            largePricePerToken < smallPricePerToken * 110 / 100, "Large swap price should not be more than 10% better"
+            largePricePerToken < smallPricePerToken, 
+            "Large swap MUST have a worse rate due to AMM price impact"
         );
     }
 
@@ -285,7 +282,7 @@ contract XYCSwapTest is Test, TestCallback {
         uint256 amountOut2 = swap(app, strategy, true, 10);
 
         assertTrue(amountOut2 < amountOut1, "Second swap should have worse rate");
-        assertEq(amountOut1, 7, "First swap should output 7 tokens");
+        assertEq(amountOut1, 8, "First swap should output 8 tokens");
         assertEq(amountOut2, 5, "Second swap should output 5 tokens");
         assertEq(amountOut2, expectedAmountOut2, "Second swap output should match calculation");
     }
@@ -365,7 +362,7 @@ contract XYCSwapTest is Test, TestCallback {
         uint256 token0Out = swap(app, strategy, false, token1Out);
 
         assertTrue(token0Out < 10, "Should get back less due to fees");
-        assertEq(token0Out, 7, "Should get back 7 tokens after round trip");
+        assertEq(token0Out, 9, "Should get back 7 tokens after round trip");
     }
 
     function testMinimumOutputRequirement() public {
@@ -416,13 +413,13 @@ contract XYCSwapTest is Test, TestCallback {
         uint256 outputWithLowFee = calculateAmountOut(amountIn, INITIAL_AMOUNT0, INITIAL_AMOUNT1, FEE_BPS);
         uint256 outputWithHighFee = calculateAmountOut(amountIn, INITIAL_AMOUNT0, INITIAL_AMOUNT1, 100);
 
-        // With these small amounts and fees, the difference might be minimal
-        // Low fee (0.3%): amountInWithFee = 10 * 9970 / 10000 = 9.97
-        // High fee (1%): amountInWithFee = 10 * 9900 / 10000 = 9.9
-        // Both calculations might round to the same output with small amounts
+        // Calculate expected outputs based on a 50/50 pool and input of 10
+        // Low fee (0.3%): 4,985,000 / 599,700 = 8.31... -> 8
+        // High fee (1%):  4,950,000 / 599,000 = 8.26... -> 8
+        // Both calculations correctly round down to 8 tokens.
         assertTrue(outputWithHighFee <= outputWithLowFee, "Higher fee should result in less or equal output");
-        assertEq(outputWithLowFee, 7, "Low fee output should be 7");
-        assertEq(outputWithHighFee, 7, "High fee output should be 7");
+        assertEq(outputWithLowFee, 8, "Low fee output should be 9");
+        assertEq(outputWithHighFee, 8, "High fee output should be 9");
     }
 
     function testVerySmallAmounts() public {
@@ -442,7 +439,32 @@ contract XYCSwapTest is Test, TestCallback {
         vm.prank(taker);
         token0.transfer(address(this), 2);
         uint256 amountOut2 = xycSwap.swapExactIn(strategy, true, 2, 0, address(this), takerData);
-        assertEq(amountOut2, 0, "2 token swap should output 0 due to rounding");
+        assertEq(amountOut2, 1, "2 token swap should output 1 with precise math");
+    }
+
+    function testSwapExactOutVerySmallAmounts() public {
+        (address app, XYCSwap.Strategy memory strategy) = createStrategy();
+        XYCSwap xycSwap = XYCSwap(app);
+
+        uint256 tinyAmountOut = 1;
+
+        vm.prank(taker);
+        token0.mint(address(this), 10); 
+        token0.approve(app, type(uint256).max);
+
+        bytes memory takerData = abi.encode(true);
+        
+        uint256 amountIn = xycSwap.swapExactOut(
+            strategy, 
+            true, 
+            tinyAmountOut, 
+            type(uint256).max,
+            address(this), 
+            takerData
+        );
+
+        assertTrue(amountIn > 0, "Amount in must be > 0 to prevent liquidity draining");
+        assertEq(amountIn, 2, "1 wei out should cost exactly 2 wei in with precise ceil math");
     }
 
     // ========== Edge Cases & Error Conditions ==========
@@ -455,6 +477,24 @@ contract XYCSwapTest is Test, TestCallback {
         // Zero amount should result in zero output, but with minAmountOut > 0 should revert
         vm.expectRevert(abi.encodeWithSelector(XYCSwap.InsufficientOutputAmount.selector, 0, 1));
         xycSwap.swapExactIn(strategy, true, 0, 1, address(this), takerData);
+    }
+
+    function testSwapExactOutZeroAmount() public {
+        (address app, XYCSwap.Strategy memory strategy) = createStrategy();
+        XYCSwap xycSwap = XYCSwap(app);
+
+        bytes memory takerData = abi.encode(true);
+
+        uint256 amountIn = xycSwap.swapExactOut(
+            strategy, 
+            true, 
+            0,
+            0,
+            address(this), 
+            takerData
+        );
+
+        assertEq(amountIn, 0, "Zero amount out should cost exactly zero amount in");
     }
 
     function testSwapExceedingPoolBalance() public {
@@ -477,6 +517,53 @@ contract XYCSwapTest is Test, TestCallback {
         // Verify pool still has some token1
         (uint256 remainingBalance1,) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token1));
         assertTrue(remainingBalance1 > 0, "Pool should never be completely drained");
+    }
+
+    function testSwapExactOutExceedingPoolBalanceReverts() public {
+        (address app, XYCSwap.Strategy memory strategy) = createStrategy();
+        XYCSwap xycSwap = XYCSwap(app);
+
+        uint256 excessiveAmountOut = INITIAL_AMOUNT1 + 1 wei; 
+
+        vm.prank(taker);
+        token0.mint(address(this), type(uint128).max);
+        token0.approve(app, type(uint256).max);
+
+        bytes memory takerData = abi.encode(true);
+
+        vm.expectRevert(stdError.arithmeticError);
+        
+        xycSwap.swapExactOut(
+            strategy, 
+            true, 
+            excessiveAmountOut, 
+            type(uint256).max,
+            address(this), 
+            takerData
+        );
+    }
+
+    function testSwapExactOutDrainingEntirePoolReverts() public {
+        (address app, XYCSwap.Strategy memory strategy) = createStrategy();
+        XYCSwap xycSwap = XYCSwap(app);
+
+        uint256 exactPoolBalanceOut = INITIAL_AMOUNT1; 
+
+        vm.prank(taker);
+        token0.mint(address(this), type(uint128).max);
+        token0.approve(app, type(uint256).max);
+
+        bytes memory takerData = abi.encode(true);
+
+        vm.expectRevert(stdError.divisionError);        
+        xycSwap.swapExactOut(
+            strategy, 
+            true, 
+            exactPoolBalanceOut, 
+            type(uint256).max, 
+            address(this), 
+            takerData
+        );
     }
 
     function testMissingTakerAquaPush() public {
@@ -543,6 +630,51 @@ contract XYCSwapTest is Test, TestCallback {
         assertTrue(amountOut < largeAmount, "Output should be less than pool balance");
     }
 
+    function testSwapExactOutLargeAmounts() public {
+        uint256 largeAmount = 1e36;
+        token0.mint(maker, largeAmount);
+        token1.mint(maker, largeAmount);
+
+        XYCSwap.Strategy memory strategy = XYCSwap.Strategy({
+            maker: maker,
+            token0: address(token0),
+            token1: address(token1),
+            feeBps: FEE_BPS,
+            salt: bytes32(uint256(1))
+        });
+
+        vm.prank(maker);
+        aqua.ship(
+            address(xycSwapImpl),
+            abi.encode(strategy),
+            dynamic([address(token0), address(token1)]),
+            dynamic([largeAmount, largeAmount])
+        );
+        address app = address(xycSwapImpl);
+        XYCSwap xycSwap = XYCSwap(app);
+
+        uint256 swapAmountOut = largeAmount / 10; 
+        
+        uint256 maxAmountIn = largeAmount;
+        vm.prank(taker);
+        token0.mint(address(this), maxAmountIn);
+        token0.approve(app, type(uint256).max);
+
+        bytes memory takerData = abi.encode(true);
+        
+        uint256 amountIn = xycSwap.swapExactOut(
+            strategy, 
+            true, 
+            swapAmountOut, 
+            type(uint256).max, 
+            address(this), 
+            takerData
+        );
+
+        assertTrue(amountIn > 0, "Amount in should be positive");
+        assertTrue(amountIn > swapAmountOut, "Amount in should be greater than amount out due to slippage and fees");
+    }
+
     function testMaxFeeScenario() public {
         // Create strategy with maximum possible fee (99.99%)
         XYCSwap.Strategy memory highFeeStrategy = XYCSwap.Strategy({
@@ -577,6 +709,50 @@ contract XYCSwapTest is Test, TestCallback {
         assertTrue(amountOut < 1, "With maximum fee, output should be near zero");
     }
 
+    function testSwapExactOutMaxFeeScenario() public {
+        XYCSwap.Strategy memory highFeeStrategy = XYCSwap.Strategy({
+            maker: maker,
+            token0: address(token0),
+            token1: address(token1),
+            feeBps: 9999, // 99.99% fee
+            salt: bytes32(uint256(2))
+        });
+
+        token0.mint(maker, INITIAL_AMOUNT0);
+        token1.mint(maker, INITIAL_AMOUNT1);
+
+        vm.prank(maker);
+        aqua.ship(
+            address(xycSwapImpl),
+            abi.encode(highFeeStrategy),
+            dynamic([address(token0), address(token1)]),
+            dynamic([INITIAL_AMOUNT0, INITIAL_AMOUNT1])
+        );
+        address app = address(xycSwapImpl);
+        XYCSwap xycSwap = XYCSwap(app);
+
+        uint256 amountOut = 10;
+
+        vm.prank(taker);
+        token0.mint(address(this), type(uint128).max);
+        token0.approve(app, type(uint256).max);
+
+        bytes memory takerData = abi.encode(true);
+        
+        uint256 amountIn = xycSwap.swapExactOut(
+            highFeeStrategy, 
+            true, 
+            amountOut, 
+            type(uint256).max, 
+            address(this), 
+            takerData
+        );
+
+        assertTrue(
+            amountIn >= amountOut * 10000, 
+            "With 99.99% fee, input should be astronomically larger than output"
+        );
+    }
     // ========== Strategy Validation ==========
 
     function testMultipleStrategiesFromSameMaker() public {
@@ -675,6 +851,34 @@ contract XYCSwapTest is Test, TestCallback {
         assertTrue(outputs[1] > outputs[2], "Third swap should have worse rate");
     }
 
+    function testSwapExactOutRapidConsecutiveSwaps() public {
+        (address app, XYCSwap.Strategy memory strategy) = createStrategy();
+        XYCSwap xycSwap = XYCSwap(app);
+
+        uint256 fixedAmountOut = 5;
+
+        vm.prank(taker);
+        token0.mint(address(this), 1000); 
+        token0.approve(app, type(uint256).max);
+
+        uint256[] memory inputs = new uint256[](3);
+        bytes memory takerData = abi.encode(true);
+
+        for (uint256 i = 0; i < 3; i++) {
+            inputs[i] = xycSwap.swapExactOut(
+                strategy, 
+                true, 
+                fixedAmountOut, 
+                type(uint256).max, 
+                address(this), 
+                takerData
+            );
+        }
+
+        assertTrue(inputs[0] < inputs[1], "Second swap should cost more due to slippage");
+        assertTrue(inputs[1] < inputs[2], "Third swap should cost more due to slippage");
+    }
+
     function testSwapWithDifferentRecipients() public {
         (address app, XYCSwap.Strategy memory strategy) = createStrategy();
 
@@ -701,13 +905,14 @@ contract XYCSwapTest is Test, TestCallback {
         uint256 reserveIn,
         uint256 reserveOut,
         uint256 feeBps
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        uint256 amountInWithFee = amountIn * (10_000 - feeBps) / 10_000;
-        return (amountInWithFee * reserveOut) / (reserveIn + amountInWithFee);
+    ) internal pure returns (uint256) {
+        uint256 feeMultiplier = 10000 - feeBps;
+        uint256 amountInWithFee = amountIn * feeMultiplier;
+        
+        uint256 numerator = amountInWithFee * reserveOut;
+        uint256 denominator = (reserveIn * 10000) + amountInWithFee;
+        
+        return numerator / denominator;
     }
 
     // Override xycSwapCallback function from TestCallback

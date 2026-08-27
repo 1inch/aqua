@@ -151,10 +151,16 @@ contract XYCSwap is AquaApp {
         uint256 balanceOut,
         uint256 amountIn
     ) internal view virtual returns (uint256 amountOut) {
-        // Use constant product formula (x*y=const) after fee deduction:
-        // balanceIn * balanceOut == (balanceIn + amountIn) * (balanceOut - amountOut)
-        uint256 amountInWithFee = amountIn * (BPS_BASE - strategy.feeBps) / BPS_BASE;
-        amountOut = (amountInWithFee * balanceOut) / (balanceIn + amountInWithFee);
+        uint256 feeMultiplier;
+        unchecked {
+            feeMultiplier = BPS_BASE - strategy.feeBps;
+        }
+
+        uint256 amountInWithFee = amountIn * feeMultiplier;
+        uint256 numerator = amountInWithFee * balanceOut;
+        uint256 denominator = (balanceIn * BPS_BASE) + amountInWithFee;
+
+        amountOut = numerator / denominator;
     }
 
     /// @dev Calculates input using constant product formula with fee
@@ -169,10 +175,18 @@ contract XYCSwap is AquaApp {
         uint256 balanceOut,
         uint256 amountOut
     ) internal view virtual returns (uint256 amountIn) {
-        // Use constant product formula (x*y=const) after fee deduction:
-        // balanceIn * balanceOut == (balanceIn + amountIn) * (balanceOut - amountOut)
-        uint256 amountOutWithFee = amountOut * BPS_BASE / (BPS_BASE - strategy.feeBps);
-        amountIn = (balanceIn * amountOutWithFee).ceilDiv(balanceOut - amountOutWithFee);
+        uint256 feeMultiplier;
+        unchecked {
+            feeMultiplier = BPS_BASE - strategy.feeBps;
+        }
+
+        uint256 numerator = balanceIn * amountOut * BPS_BASE;
+        uint256 denominator = (balanceOut - amountOut) * feeMultiplier;
+        amountIn = numerator / denominator;
+
+        if (numerator % denominator != 0) {
+            unchecked { amountIn++; }
+        }
     }
 
     /// @dev Determines input/output tokens and their balances based on swap direction
