@@ -45,7 +45,7 @@ contract XYCSwap is AquaApp {
 
     /// @notice Initializes the XYCSwap app with an Aqua protocol instance
     /// @param aqua_ The Aqua protocol contract address
-    constructor(IAqua aqua_) AquaApp(aqua_) { }
+    constructor(IAqua aqua_) AquaApp(aqua_) {}
 
     /// @notice Calculates the output amount for a given input amount
     /// @param strategy The strategy configuration
@@ -58,7 +58,7 @@ contract XYCSwap is AquaApp {
         uint256 amountIn
     ) external view returns (uint256 amountOut) {
         bytes32 strategyHash = keccak256(abi.encode(strategy));
-        (,, uint256 balanceIn, uint256 balanceOut) = _getInAndOut(strategy, strategyHash, zeroForOne);
+        (, , uint256 balanceIn, uint256 balanceOut) = _getInAndOut(strategy, strategyHash, zeroForOne);
         amountOut = _quoteExactIn(strategy, balanceIn, balanceOut, amountIn);
     }
 
@@ -73,7 +73,7 @@ contract XYCSwap is AquaApp {
         uint256 amountOut
     ) external view returns (uint256 amountIn) {
         bytes32 strategyHash = keccak256(abi.encode(strategy));
-        (,, uint256 balanceIn, uint256 balanceOut) = _getInAndOut(strategy, strategyHash, zeroForOne);
+        (, , uint256 balanceIn, uint256 balanceOut) = _getInAndOut(strategy, strategyHash, zeroForOne);
         amountIn = _quoteExactOut(strategy, balanceIn, balanceOut, amountOut);
     }
 
@@ -92,19 +92,28 @@ contract XYCSwap is AquaApp {
         uint256 amountOutMin,
         address to,
         bytes calldata takerData
-    )
-        external
-        nonReentrantStrategy(strategy.maker, keccak256(abi.encode(strategy)))
-        returns (uint256 amountOut)
-    {
+    ) external nonReentrantStrategy(strategy.maker, keccak256(abi.encode(strategy))) returns (uint256 amountOut) {
         bytes32 strategyHash = keccak256(abi.encode(strategy));
 
-        (address tokenIn, address tokenOut, uint256 balanceIn, uint256 balanceOut) = _getInAndOut(strategy, strategyHash, zeroForOne);
+        (address tokenIn, address tokenOut, uint256 balanceIn, uint256 balanceOut) = _getInAndOut(
+            strategy,
+            strategyHash,
+            zeroForOne
+        );
         amountOut = _quoteExactIn(strategy, balanceIn, balanceOut, amountIn);
         require(amountOut >= amountOutMin, InsufficientOutputAmount(amountOut, amountOutMin));
 
         AQUA.pull(strategy.maker, strategyHash, tokenOut, amountOut, to);
-        IXYCSwapCallback(msg.sender).xycSwapCallback(tokenIn, tokenOut, amountIn, amountOut, strategy.maker, address(this), strategyHash, takerData);
+        IXYCSwapCallback(msg.sender).xycSwapCallback(
+            tokenIn,
+            tokenOut,
+            amountIn,
+            amountOut,
+            strategy.maker,
+            address(this),
+            strategyHash,
+            takerData
+        );
         _safeCheckAquaPush(strategy.maker, strategyHash, tokenIn, balanceIn + amountIn);
     }
 
@@ -123,19 +132,28 @@ contract XYCSwap is AquaApp {
         uint256 amountInMax,
         address to,
         bytes calldata takerData
-    )
-        external
-        nonReentrantStrategy(strategy.maker, keccak256(abi.encode(strategy)))
-        returns (uint256 amountIn)
-    {
+    ) external nonReentrantStrategy(strategy.maker, keccak256(abi.encode(strategy))) returns (uint256 amountIn) {
         bytes32 strategyHash = keccak256(abi.encode(strategy));
 
-        (address tokenIn, address tokenOut, uint256 balanceIn, uint256 balanceOut) = _getInAndOut(strategy, strategyHash, zeroForOne);
+        (address tokenIn, address tokenOut, uint256 balanceIn, uint256 balanceOut) = _getInAndOut(
+            strategy,
+            strategyHash,
+            zeroForOne
+        );
         amountIn = _quoteExactOut(strategy, balanceIn, balanceOut, amountOut);
         require(amountIn <= amountInMax, ExcessiveInputAmount(amountIn, amountInMax));
 
         AQUA.pull(strategy.maker, strategyHash, tokenOut, amountOut, to);
-        IXYCSwapCallback(msg.sender).xycSwapCallback(tokenIn, tokenOut, amountIn, amountOut, strategy.maker, address(this), strategyHash, takerData);
+        IXYCSwapCallback(msg.sender).xycSwapCallback(
+            tokenIn,
+            tokenOut,
+            amountIn,
+            amountOut,
+            strategy.maker,
+            address(this),
+            strategyHash,
+            takerData
+        );
         _safeCheckAquaPush(strategy.maker, strategyHash, tokenIn, balanceIn + amountIn);
     }
 
@@ -153,7 +171,7 @@ contract XYCSwap is AquaApp {
     ) internal view virtual returns (uint256 amountOut) {
         // Use constant product formula (x*y=const) after fee deduction:
         // balanceIn * balanceOut == (balanceIn + amountIn) * (balanceOut - amountOut)
-        uint256 amountInWithFee = amountIn * (BPS_BASE - strategy.feeBps) / BPS_BASE;
+        uint256 amountInWithFee = (amountIn * (BPS_BASE - strategy.feeBps)) / BPS_BASE;
         amountOut = (amountInWithFee * balanceOut) / (balanceIn + amountInWithFee);
     }
 
@@ -171,12 +189,16 @@ contract XYCSwap is AquaApp {
     ) internal view virtual returns (uint256 amountIn) {
         // Use constant product formula (x*y=const) after fee deduction:
         // balanceIn * balanceOut == (balanceIn + amountIn) * (balanceOut - amountOut)
-        uint256 amountOutWithFee = amountOut * BPS_BASE / (BPS_BASE - strategy.feeBps);
+        uint256 amountOutWithFee = (amountOut * BPS_BASE) / (BPS_BASE - strategy.feeBps);
         amountIn = (balanceIn * amountOutWithFee).ceilDiv(balanceOut - amountOutWithFee);
     }
 
     /// @dev Determines input/output tokens and their balances based on swap direction
-    function _getInAndOut(Strategy calldata strategy, bytes32 strategyHash, bool zeroForOne) private view returns (address tokenIn, address tokenOut, uint256 balanceIn, uint256 balanceOut) {
+    function _getInAndOut(
+        Strategy calldata strategy,
+        bytes32 strategyHash,
+        bool zeroForOne
+    ) private view returns (address tokenIn, address tokenOut, uint256 balanceIn, uint256 balanceOut) {
         tokenIn = zeroForOne ? strategy.token0 : strategy.token1;
         tokenOut = zeroForOne ? strategy.token1 : strategy.token0;
         (balanceIn, balanceOut) = AQUA.safeBalances(strategy.maker, address(this), strategyHash, tokenIn, tokenOut);

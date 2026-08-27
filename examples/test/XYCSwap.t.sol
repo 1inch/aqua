@@ -16,7 +16,7 @@ import { XYCSwap, IXYCSwapCallback } from "examples/apps/XYCSwap.sol";
 
 // Mock ERC20 token for testing
 contract MockERC20 is ERC20 {
-    constructor(string memory name, string memory symbol) ERC20(name, symbol) { }
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
 
     function mint(address to, uint256 amount) external {
         _mint(to, amount);
@@ -25,7 +25,16 @@ contract MockERC20 is ERC20 {
 
 // Simple IXYCSwapCallback implementation for testing
 contract TestCallback is IXYCSwapCallback {
-    function xycSwapCallback(address, address, uint256, uint256, address, address, bytes32, bytes calldata) external virtual override {
+    function xycSwapCallback(
+        address,
+        address,
+        uint256,
+        uint256,
+        address,
+        address,
+        bytes32,
+        bytes calldata
+    ) external virtual override {
         // Callback now must handle token transfers
         // This base implementation does nothing - derived contracts will override
     }
@@ -33,7 +42,16 @@ contract TestCallback is IXYCSwapCallback {
 
 // Malicious xycSwapCallback that doesn't deposit tokens
 contract MaliciousCallback is IXYCSwapCallback {
-    function xycSwapCallback(address, address, uint256, uint256, address, address, bytes32, bytes calldata) external override {
+    function xycSwapCallback(
+        address,
+        address,
+        uint256,
+        uint256,
+        address,
+        address,
+        bytes32,
+        bytes calldata
+    ) external override {
         // Intentionally do nothing - don't deposit tokens
     }
 }
@@ -106,10 +124,7 @@ contract XYCSwapTest is Test, TestCallback {
         XYCSwap.Strategy memory strategy,
         bool zeroForOne,
         uint256 amountIn
-    )
-        internal
-        returns (uint256)
-    {
+    ) internal returns (uint256) {
         address tokenIn = zeroForOne ? strategy.token0 : strategy.token1;
         vm.prank(taker);
         MockERC20(tokenIn).transfer(address(this), amountIn);
@@ -153,8 +168,8 @@ contract XYCSwapTest is Test, TestCallback {
         assertEq(token1.balanceOf(address(this)), initialBalance1 + amountOut, "Should receive token1");
 
         // Verify pool balances
-        (uint256 newBalance0,) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token0));
-        (uint256 newBalance1,) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token1));
+        (uint256 newBalance0, ) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token0));
+        (uint256 newBalance1, ) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token1));
 
         // Pool should have more token0, less token1
         assertEq(newBalance0, INITIAL_AMOUNT0 + amountIn, "Pool should have more token0");
@@ -237,7 +252,8 @@ contract XYCSwapTest is Test, TestCallback {
         // This is because the fee impact is proportionally less significant on larger amounts
         // Let's verify the actual price impact
         assertTrue(
-            largePricePerToken < smallPricePerToken * 110 / 100, "Large swap price should not be more than 10% better"
+            largePricePerToken < (smallPricePerToken * 110) / 100,
+            "Large swap price should not be more than 10% better"
         );
     }
 
@@ -258,8 +274,8 @@ contract XYCSwapTest is Test, TestCallback {
         uint256 amountOut = xycSwap.swapExactIn(strategy, true, amountIn, 0, address(this), takerData);
 
         // Get new balances
-        (uint256 newBalance0,) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token0));
-        (uint256 newBalance1,) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token1));
+        (uint256 newBalance0, ) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token0));
+        (uint256 newBalance1, ) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token1));
 
         // Calculate new k (should be slightly higher due to fees)
         uint256 newK = newBalance0 * newBalance1;
@@ -278,8 +294,8 @@ contract XYCSwapTest is Test, TestCallback {
         (address app, XYCSwap.Strategy memory strategy) = createStrategy();
 
         uint256 amountOut1 = swap(app, strategy, true, 10);
-        (uint256 balance0After1,) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token0));
-        (uint256 balance1After1,) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token1));
+        (uint256 balance0After1, ) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token0));
+        (uint256 balance1After1, ) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token1));
 
         uint256 expectedAmountOut2 = calculateAmountOut(10, balance0After1, balance1After1, FEE_BPS);
         uint256 amountOut2 = swap(app, strategy, true, 10);
@@ -337,9 +353,9 @@ contract XYCSwapTest is Test, TestCallback {
         (address app, XYCSwap.Strategy memory strategy) = createStrategy();
 
         // Track initial total value (including taker's balance)
-        (uint256 initialTotal0,) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token0));
+        (uint256 initialTotal0, ) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token0));
         initialTotal0 += token0.balanceOf(address(this)) + token0.balanceOf(taker);
-        (uint256 initialTotal1,) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token1));
+        (uint256 initialTotal1, ) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token1));
         initialTotal1 += token1.balanceOf(address(this)) + token1.balanceOf(taker);
 
         // Perform multiple swaps
@@ -348,9 +364,9 @@ contract XYCSwapTest is Test, TestCallback {
         swap(app, strategy, true, 15);
 
         // Track final total value (including taker's balance)
-        (uint256 finalTotal0,) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token0));
+        (uint256 finalTotal0, ) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token0));
         finalTotal0 += token0.balanceOf(address(this)) + token0.balanceOf(taker);
-        (uint256 finalTotal1,) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token1));
+        (uint256 finalTotal1, ) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token1));
         finalTotal1 += token1.balanceOf(address(this)) + token1.balanceOf(taker);
 
         // Total tokens should be conserved (no creation or destruction)
@@ -381,7 +397,9 @@ contract XYCSwapTest is Test, TestCallback {
 
         // Should revert if minimum output is too high
         bytes memory takerData = abi.encode(true);
-        vm.expectRevert(abi.encodeWithSelector(XYCSwap.InsufficientOutputAmount.selector, expectedOut, expectedOut + 1));
+        vm.expectRevert(
+            abi.encodeWithSelector(XYCSwap.InsufficientOutputAmount.selector, expectedOut, expectedOut + 1)
+        );
         xycSwap.swapExactIn(strategy, true, amountIn, expectedOut + 1, address(this), takerData);
 
         // Should succeed with correct minimum
@@ -475,7 +493,7 @@ contract XYCSwapTest is Test, TestCallback {
         assertTrue(amountOut < INITIAL_AMOUNT1, "Cannot drain pool completely");
 
         // Verify pool still has some token1
-        (uint256 remainingBalance1,) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token1));
+        (uint256 remainingBalance1, ) = aqua.rawBalances(maker, app, keccak256(abi.encode(strategy)), address(token1));
         assertTrue(remainingBalance1 > 0, "Pool should never be completely drained");
     }
 
@@ -701,17 +719,22 @@ contract XYCSwapTest is Test, TestCallback {
         uint256 reserveIn,
         uint256 reserveOut,
         uint256 feeBps
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        uint256 amountInWithFee = amountIn * (10_000 - feeBps) / 10_000;
+    ) internal pure returns (uint256) {
+        uint256 amountInWithFee = (amountIn * (10_000 - feeBps)) / 10_000;
         return (amountInWithFee * reserveOut) / (reserveIn + amountInWithFee);
     }
 
     // Override xycSwapCallback function from TestCallback
-    function xycSwapCallback(address tokenIn, address /* tokenOut */, uint256 amountIn, uint256 /* amountOut */, address maker_, address app, bytes32 strategyHash, bytes calldata /* takerData */) external override {
+    function xycSwapCallback(
+        address tokenIn,
+        address /* tokenOut */,
+        uint256 amountIn,
+        uint256 /* amountOut */,
+        address maker_,
+        address app,
+        bytes32 strategyHash,
+        bytes calldata /* takerData */
+    ) external override {
         IERC20(tokenIn).approve(address(aqua), amountIn);
         aqua.push(maker_, app, strategyHash, tokenIn, amountIn);
     }
