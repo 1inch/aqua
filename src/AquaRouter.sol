@@ -15,8 +15,7 @@ import { Aqua } from "./Aqua.sol";
 /// @dev This is the recommended contract to deploy for production use
 /// @dev This contract is Ownable via Rescuable mixin
 contract AquaRouter is Aqua, Simulator, Multicall, Rescuable {
-
     /// @notice owner is used only to rescue funds
     /// @param owner The owner of the contract, the reciever of the rescued funds, authorized to rescue stuck tokens and ETH
-    constructor(address owner) Rescuable(owner) { }
+    constructor(address owner) Rescuable(owner) {}
 }

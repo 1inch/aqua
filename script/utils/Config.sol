@@ -18,9 +18,7 @@ library Config {
     /// @notice Reads AquaRouter constructor parameters from the JSON config.
     /// @param vm The Forge Vm instance used for file and JSON operations.
     /// @return owner The owner address for Rescuable access control.
-    function readAquaRouterParameters(Vm vm) internal view returns (
-        address owner
-    ) {
+    function readAquaRouterParameters(Vm vm) internal view returns (address owner) {
         uint256 chain = block.chainid;
 
         string memory path = string.concat(vm.projectRoot(), "/config/constants.json");

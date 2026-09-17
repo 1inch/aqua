@@ -16,7 +16,7 @@ import { XYCSwap, IXYCSwapCallback } from "examples/apps/XYCSwap.sol";
 
 // Mock ERC20 token for testing
 contract MockERC20 is ERC20 {
-    constructor(string memory name, string memory symbol) ERC20(name, symbol) { }
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
 
     function mint(address to, uint256 amount) external {
         _mint(to, amount);
@@ -370,12 +370,8 @@ contract XYCNestedSwapsTest is Test, IXYCSwapCallback {
         uint256 reserveIn,
         uint256 reserveOut,
         uint256 feeBps
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        uint256 amountInWithFee = amountIn * (10_000 - feeBps) / 10_000;
+    ) internal pure returns (uint256) {
+        uint256 amountInWithFee = (amountIn * (10_000 - feeBps)) / 10_000;
         return (amountInWithFee * reserveOut) / (reserveIn + amountInWithFee);
     }
 
@@ -389,10 +385,7 @@ contract XYCNestedSwapsTest is Test, IXYCSwapCallback {
         address app,
         bytes32 strategyHash,
         bytes calldata takerData
-    )
-        external
-        override
-    {
+    ) external override {
         // console.log("=== AQUA CALLBACK TRIGGERED ===");
         // console.log("TokenIn:", tokenIn);
         // console.log("AmountIn:", amountIn);

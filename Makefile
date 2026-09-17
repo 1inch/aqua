@@ -151,23 +151,23 @@ get-outputs:
 
 update:; forge update
 
-build:; forge build
+build:; npx hardhat build
 
-tests :; forge test -vvv --gas-report
+tests :; npx hardhat test -vvv --gas-stats
 
-coverage :; mkdir -p coverage && forge coverage --report summary --ir-minimum --report-file coverage/lcov.info
+coverage :; npx hardhat test --coverage
 
-snapshot :; forge snapshot --no-match-test "testFuzz_*"
+snapshot :; npx hardhat test solidity --snapshot
 
-snapshot-check :; forge snapshot --check --no-match-test "testFuzz_*"
+snapshot-check :; npx hardhat test solidity --snapshot-check
 
-format :; forge fmt
+format :; npx prettier --write "{src,test,script,examples}/**/*.sol"
 
-clean :; forge clean
+clean :; npx hardhat clean
 
-lint :; forge fmt --check
+lint :; npx prettier --check "{src,test,script,examples}/**/*.sol"
 
-anvil :;  anvil --fork-url $(NODE_URL) --steps-tracing --chain-id $(OPS_CHAIN_ID) --host 127.0.0.1 --port 8546 -vvvvv
+node :; npx hardhat node --fork $(NODE_URL) --chain-id $(OPS_CHAIN_ID) --hostname 127.0.0.1 --port 8546
 
 balance :; cast balance $(ADDRESS) --rpc-url $(RPC_URL) | cast from-wei
 
@@ -177,5 +177,5 @@ help:
 		@echo "Available targets:"
 		@grep -E '^[a-zA-Z0-9_.-]+:' $(CURRENT_DIR)/Makefile | grep -v '^\.' | awk -F: '{print "  " $$1}' | sort -u
 
-.PHONY: deploy-aqua-router deploy-aqua-router-impl verify-aqua-router verify-aqua-router-impl save-deployments contract-address validate-aqua-router validate \
+.PHONY: deploy-aqua-router deploy-aqua-router-ignition deploy-aqua-router-impl verify-aqua-router verify-aqua-router-impl save-deployments contract-address validate-aqua-router validate \
         get get-outputs update build tests coverage snapshot snapshot-check format clean lint anvil balance balance-erc20 help

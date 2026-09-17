@@ -17,9 +17,7 @@ contract DeployAquaRouter is Script {
     using Config for *;
 
     function run() external {
-        (
-            address owner
-        ) = vm.readAquaRouterParameters();
+        (address owner) = vm.readAquaRouterParameters();
 
         vm.startBroadcast();
         AquaRouter aquaRouter = new AquaRouter(owner);
