@@ -151,23 +151,24 @@ get-outputs:
 
 update:; forge update
 
-build:; npx hardhat build
+# Delegate to the package.json scripts so the two can't drift apart
+build:; yarn build
 
 tests :; npx hardhat test -vvv --gas-stats
 
 coverage :; npx hardhat test --coverage
 
-snapshot :; npx hardhat test solidity --snapshot
+snapshot :; yarn snapshot
 
-snapshot-check :; npx hardhat test solidity --snapshot-check
+snapshot-check :; yarn snapshot:check
 
-format :; npx prettier --write "{src,test,script,examples}/**/*.sol"
+format :; yarn format
 
 clean :; npx hardhat clean
 
-lint :; npx prettier --check "{src,test,script,examples}/**/*.sol"
+lint :; yarn lint
 
-node :; npx hardhat node --fork $(NODE_URL) --chain-id $(OPS_CHAIN_ID) --hostname 127.0.0.1 --port 8546
+node :; npx hardhat node --fork $(NODE_URL) --chain-id $(OPS_CHAIN_ID) --hostname 127.0.0.1 --port 8545
 
 balance :; cast balance $(ADDRESS) --rpc-url $(RPC_URL) | cast from-wei
 
@@ -178,4 +179,4 @@ help:
 		@grep -E '^[a-zA-Z0-9_.-]+:' $(CURRENT_DIR)/Makefile | grep -v '^\.' | awk -F: '{print "  " $$1}' | sort -u
 
 .PHONY: deploy-aqua-router deploy-aqua-router-ignition deploy-aqua-router-impl verify-aqua-router verify-aqua-router-impl save-deployments contract-address validate-aqua-router validate \
-        get get-outputs update build tests coverage snapshot snapshot-check format clean lint anvil balance balance-erc20 help
+        get get-outputs update build tests coverage snapshot snapshot-check format clean lint node balance balance-erc20 help

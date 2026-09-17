@@ -24,7 +24,7 @@ npx hardhat keystore set SEPOLIA_PRIVATE_KEY
 npx hardhat keystore set ETHERSCAN_API_KEY
 ```
 
-Configured networks live in `hardhat.config.ts` (`localhost`, `sepolia`, `mainnet`); add more by copying the pattern. See `.env.example` for the full list of variable names.
+Configured networks live in `hardhat.config.ts` (`localhost`, `sepolia`); add more by copying the pattern. See `.env.example` for the full list of variable names.
 
 ## 2. Deploy
 
