@@ -2,6 +2,7 @@ import { configVariable, defineConfig } from "hardhat/config";
 import hardhatIgnitionViem from "@nomicfoundation/hardhat-ignition-viem";
 import hardhatIgnoreWarnings from "hardhat-ignore-warnings";
 import hardhatKeystore from "@nomicfoundation/hardhat-keystore";
+import hardhatVerify from "@nomicfoundation/hardhat-verify";
 
 const aquaCompilerSettings = {
   version: "0.8.30",
@@ -15,8 +16,14 @@ const aquaCompilerSettings = {
 };
 
 export default defineConfig({
-  plugins: [hardhatIgnitionViem, hardhatIgnoreWarnings, hardhatKeystore],
+  plugins: [
+    hardhatIgnitionViem,
+    hardhatIgnoreWarnings,
+    hardhatKeystore,
+    hardhatVerify,
+  ],
   solidity: {
+    splitTestsCompilation: true,
     profiles: {
       default: { compilers: [aquaCompilerSettings] },
       production: { compilers: [aquaCompilerSettings] },
@@ -26,6 +33,11 @@ export default defineConfig({
     sources: "./src",
   },
   networks: {
+    localhost: {
+      type: "http",
+      url: "http://127.0.0.1:8545",
+      chainId: 31337,
+    },
     sepolia: {
       type: "http",
       url: configVariable("SEPOLIA_RPC_URL"),

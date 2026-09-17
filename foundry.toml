@@ -1,4 +1,7 @@
 [profile.default]
+# Pinned because Foundry otherwise detects the Hardhat project and defaults `out`
+# to ./artifacts, where `hardhat build` prunes whatever Foundry wrote there.
+out = "out"
 solc = "0.8.30"
 optimizer = true
 optimizer_runs = 10_000_000
@@ -7,6 +10,14 @@ libs = ["node_modules", "lib"]
 fs_permissions = [
     { access = "read-write", path = "./deployments" },
     { access = "read-write", path = "./config" }
+]
+# Kept here rather than in remappings.txt, which Hardhat also reads and which
+# only needs `src/=src/`. Foundry's auto-detection maps forge-std to the package
+# root instead of its src/ directory, so the deploy scripts need these explicitly.
+remappings = [
+    "forge-std/=node_modules/forge-std/src/",
+    "@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/",
+    "@1inch/solidity-utils/=node_modules/@1inch/solidity-utils/",
 ]
 
 [profile.ci]
@@ -22,11 +33,3 @@ fs_permissions = [
 
 [profile.solx]
 solc = "~/.local/bin/solx"
-
-[fmt]
-single_line_statement_blocks = "multi"
-multiline_func_header = "all"
-override_spacing = false
-bracket_spacing = true
-int_types = "long"
-number_underscore = "thousands"
