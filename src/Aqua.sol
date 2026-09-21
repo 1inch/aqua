@@ -18,8 +18,11 @@ contract Aqua is IAqua {
 
     uint8 private constant _DOCKED = 0xff;
 
-    mapping(address maker => mapping(address app => mapping(bytes32 strategyHash => mapping(address token => Balance))))
-        private _balances; // aka makers' allowances
+    // prettier-ignore
+    mapping(address maker =>
+        mapping(address app =>
+            mapping(bytes32 strategyHash =>
+                mapping(address token => Balance)))) private _balances; // aka makers' allowances
 
     function rawBalances(
         address maker,
