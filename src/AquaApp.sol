@@ -63,7 +63,7 @@ abstract contract AquaApp {
         // Check that the swap function is reentrancy protected to prevent nested swaps
         require(_reentrancyLocks[maker][strategyHash].isLocked(), MissingNonReentrantModifier());
 
-        (uint256 newBalance, ) = AQUA.rawBalances(maker, address(this), strategyHash, token);
+        (uint256 newBalance,) = AQUA.rawBalances(maker, address(this), strategyHash, token);
         require(newBalance >= expectedBalance, MissingTakerAquaPush(token, newBalance, expectedBalance));
     }
 }

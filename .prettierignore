@@ -1,9 +1,0 @@
-node_modules
-out
-cache
-artifacts
-broadcast
-lib
-coverage
-.coverage_contracts
-.coverage_artifacts

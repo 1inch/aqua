@@ -19,7 +19,12 @@ contract AquaEventsTest is AquaTestBase {
         emit IAqua.Shipped(maker, app, strategyHash, strategy);
 
         vm.prank(maker);
-        aqua.ship(app, strategy, dynamic([address(token1)]), dynamic([uint256(100e18)]));
+        aqua.ship(
+            app,
+            strategy,
+            dynamic([address(token1)]),
+            dynamic([uint256(100e18)])
+        );
     }
 
     function testShipEmitsPushedEventForEachToken() public {
@@ -39,7 +44,12 @@ contract AquaEventsTest is AquaTestBase {
         emit IAqua.Pushed(maker, app, strategyHash, address(token2), 200e18);
 
         vm.prank(maker);
-        aqua.ship(app, strategy, dynamic([address(token1), address(token2)]), dynamic([uint256(100e18), uint256(200e18)]));
+        aqua.ship(
+            app,
+            strategy,
+            dynamic([address(token1), address(token2)]),
+            dynamic([uint256(100e18), uint256(200e18)])
+        );
     }
 
     // ========== DOCK EVENTS ==========
@@ -50,14 +60,23 @@ contract AquaEventsTest is AquaTestBase {
 
         // First ship the strategy
         vm.prank(maker);
-        aqua.ship(app, strategy, dynamic([address(token1)]), dynamic([uint256(100e18)]));
+        aqua.ship(
+            app,
+            strategy,
+            dynamic([address(token1)]),
+            dynamic([uint256(100e18)])
+        );
 
         // Expect Docked event
         vm.expectEmit(true, true, true, true);
         emit IAqua.Docked(maker, app, strategyHash);
 
         vm.prank(maker);
-        aqua.dock(app, strategyHash, dynamic([address(token1)]));
+        aqua.dock(
+            app,
+            strategyHash,
+            dynamic([address(token1)])
+        );
     }
 
     // ========== PUSH EVENTS ==========
@@ -68,7 +87,12 @@ contract AquaEventsTest is AquaTestBase {
 
         // First ship the strategy
         vm.prank(maker);
-        aqua.ship(app, strategy, dynamic([address(token1)]), dynamic([uint256(100e18)]));
+        aqua.ship(
+            app,
+            strategy,
+            dynamic([address(token1)]),
+            dynamic([uint256(100e18)])
+        );
 
         // Expect Pushed event
         vm.expectEmit(true, true, true, true);
@@ -86,7 +110,12 @@ contract AquaEventsTest is AquaTestBase {
 
         // First ship the strategy
         vm.prank(maker);
-        aqua.ship(app, strategy, dynamic([address(token1)]), dynamic([uint256(100e18)]));
+        aqua.ship(
+            app,
+            strategy,
+            dynamic([address(token1)]),
+            dynamic([uint256(100e18)])
+        );
 
         // Expect Pulled event
         vm.expectEmit(true, true, true, true);

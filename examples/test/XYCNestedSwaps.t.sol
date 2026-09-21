@@ -16,7 +16,7 @@ import { XYCSwap, IXYCSwapCallback } from "examples/apps/XYCSwap.sol";
 
 // Mock ERC20 token for testing
 contract MockERC20 is ERC20 {
-    constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) { }
 
     function mint(address to, uint256 amount) external {
         _mint(to, amount);
@@ -92,7 +92,12 @@ contract XYCNestedSwapsTest is Test, IXYCSwapCallback {
         });
 
         vm.prank(maker);
-        aqua.ship(address(xycSwapImpl), abi.encode(strategy), dynamic([address(token0), address(token1)]), dynamic([INITIAL_AMOUNT0, INITIAL_AMOUNT1]));
+        aqua.ship(
+            address(xycSwapImpl),
+            abi.encode(strategy),
+            dynamic([address(token0), address(token1)]),
+            dynamic([INITIAL_AMOUNT0, INITIAL_AMOUNT1])
+        );
         address testPool = address(xycSwapImpl);
 
         // ========== Setup Malicious Attack Parameters ==========
@@ -222,7 +227,12 @@ contract XYCNestedSwapsTest is Test, IXYCSwapCallback {
 
         vm.prank(maker);
         bytes32 strategyHash = keccak256(abi.encode(strategy));
-        aqua.ship(address(xycSwapImpl), abi.encode(strategy), dynamic([address(token0), address(token1)]), dynamic([INITIAL_AMOUNT0, INITIAL_AMOUNT1]));
+        aqua.ship(
+            address(xycSwapImpl),
+            abi.encode(strategy),
+            dynamic([address(token0), address(token1)]),
+            dynamic([INITIAL_AMOUNT0, INITIAL_AMOUNT1])
+        );
         address testPool = address(xycSwapImpl);
 
         // console.log("=== APP ISOLATION PUSH TEST ===");
@@ -290,7 +300,12 @@ contract XYCNestedSwapsTest is Test, IXYCSwapCallback {
         });
 
         vm.prank(maker);
-        aqua.ship(address(xycSwapImpl), abi.encode(strategy), dynamic([address(token0), address(token1)]), dynamic([INITIAL_AMOUNT0, INITIAL_AMOUNT1]));
+        aqua.ship(
+            address(xycSwapImpl),
+            abi.encode(strategy),
+            dynamic([address(token0), address(token1)]),
+            dynamic([INITIAL_AMOUNT0, INITIAL_AMOUNT1])
+        );
         address testPool = address(xycSwapImpl);
 
         // ========== Setup Malicious Over-Push Attack ==========
@@ -318,7 +333,9 @@ contract XYCNestedSwapsTest is Test, IXYCSwapCallback {
         bytes memory takerData = abi.encode(true);
 
         // This should trigger the malicious over-push attempt in the callback
-        try XYCSwap(testPool).swapExactIn(strategy, true, swapAmount, 0, address(this), takerData) returns (uint256 output) {
+        try XYCSwap(testPool).swapExactIn(strategy, true, swapAmount, 0, address(this), takerData) returns (
+            uint256 output
+        ) {
             // console.log("=== POST-ATTACK ANALYSIS ===");
             // console.log("Swap completed with output:", output);
             // console.log("Pool balance after - Token0:", aqua.balances(maker, testPool, address(token0)));
@@ -348,8 +365,17 @@ contract XYCNestedSwapsTest is Test, IXYCSwapCallback {
     }
 
     // Helper function to calculate expected output using constant product formula
-    function calculateAmountOut(uint256 amountIn, uint256 reserveIn, uint256 reserveOut, uint256 feeBps) internal pure returns (uint256) {
-        uint256 amountInWithFee = (amountIn * (10_000 - feeBps)) / 10_000;
+    function calculateAmountOut(
+        uint256 amountIn,
+        uint256 reserveIn,
+        uint256 reserveOut,
+        uint256 feeBps
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        uint256 amountInWithFee = amountIn * (10_000 - feeBps) / 10_000;
         return (amountInWithFee * reserveOut) / (reserveIn + amountInWithFee);
     }
 
@@ -363,7 +389,10 @@ contract XYCNestedSwapsTest is Test, IXYCSwapCallback {
         address app,
         bytes32 strategyHash,
         bytes calldata takerData
-    ) external override {
+    )
+        external
+        override
+    {
         // console.log("=== AQUA CALLBACK TRIGGERED ===");
         // console.log("TokenIn:", tokenIn);
         // console.log("AmountIn:", amountIn);

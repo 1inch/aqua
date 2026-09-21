@@ -162,11 +162,11 @@ snapshot :; yarn snapshot
 
 snapshot-check :; yarn snapshot:check
 
-format :; yarn format
+format :; forge fmt
 
 clean :; npx hardhat clean
 
-lint :; yarn lint
+lint :; forge fmt --check
 
 node :; npx hardhat node --fork $(NODE_URL) --chain-id $(OPS_CHAIN_ID) --hostname 127.0.0.1 --port 8545
 

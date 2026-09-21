@@ -33,3 +33,11 @@ fs_permissions = [
 
 [profile.solx]
 solc = "~/.local/bin/solx"
+
+[fmt]
+single_line_statement_blocks = "multi"
+multiline_func_header = "all"
+override_spacing = false
+bracket_spacing = true
+int_types = "long"
+number_underscore = "thousands"

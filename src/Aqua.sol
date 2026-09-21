@@ -18,7 +18,6 @@ contract Aqua is IAqua {
 
     uint8 private constant _DOCKED = 0xff;
 
-    // prettier-ignore
     mapping(address maker =>
         mapping(address app =>
             mapping(bytes32 strategyHash =>
@@ -28,13 +27,7 @@ contract Aqua is IAqua {
         return _balances[maker][app][strategyHash][token].load();
     }
 
-    function safeBalances(
-        address maker,
-        address app,
-        bytes32 strategyHash,
-        address token0,
-        address token1
-    ) external view returns (uint256 balance0, uint256 balance1) {
+    function safeBalances(address maker, address app, bytes32 strategyHash, address token0, address token1) external view returns (uint256 balance0, uint256 balance1) {
         (uint248 amount0, uint8 tokensCount0) = _balances[maker][app][strategyHash][token0].load();
         require(tokensCount0 > 0 && tokensCount0 != _DOCKED, SafeBalancesForTokenNotInActiveStrategy(maker, app, strategyHash, token0));
         balance0 = amount0;
@@ -44,7 +37,7 @@ contract Aqua is IAqua {
         balance1 = amount1;
     }
 
-    function ship(address app, bytes calldata strategy, address[] calldata tokens, uint256[] calldata amounts) external returns (bytes32 strategyHash) {
+    function ship(address app, bytes calldata strategy, address[] calldata tokens, uint256[] calldata amounts) external returns(bytes32 strategyHash) {
         strategyHash = keccak256(strategy);
         uint8 tokensCount = tokens.length.toUint8();
         require(tokensCount != _DOCKED, MaxNumberOfTokensExceeded(tokensCount, _DOCKED - 1));
