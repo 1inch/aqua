@@ -39,12 +39,7 @@ contract AquaEventsTest is AquaTestBase {
         emit IAqua.Pushed(maker, app, strategyHash, address(token2), 200e18);
 
         vm.prank(maker);
-        aqua.ship(
-            app,
-            strategy,
-            dynamic([address(token1), address(token2)]),
-            dynamic([uint256(100e18), uint256(200e18)])
-        );
+        aqua.ship(app, strategy, dynamic([address(token1), address(token2)]), dynamic([uint256(100e18), uint256(200e18)]));
     }
 
     // ========== DOCK EVENTS ==========

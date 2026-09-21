@@ -15,15 +15,7 @@ contract AquaPushPullTest is AquaTestBase {
     function testPushRequiresActiveStrategy() public {
         // Try to push without ship
         vm.prank(pusher);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IAqua.PushToNonActiveStrategyPrevented.selector,
-                maker,
-                app,
-                keccak256("nonexistent"),
-                address(token1)
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(IAqua.PushToNonActiveStrategyPrevented.selector, maker, app, keccak256("nonexistent"), address(token1)));
         aqua.push(maker, app, keccak256("nonexistent"), address(token1), 100e18);
     }
 
@@ -37,15 +29,7 @@ contract AquaPushPullTest is AquaTestBase {
 
         // Try to push after dock
         vm.prank(pusher);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IAqua.PushToNonActiveStrategyPrevented.selector,
-                maker,
-                app,
-                keccak256("strategy5"),
-                address(token1)
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(IAqua.PushToNonActiveStrategyPrevented.selector, maker, app, keccak256("strategy5"), address(token1)));
         aqua.push(maker, app, keccak256("strategy5"), address(token1), 50e18);
     }
 
@@ -56,15 +40,7 @@ contract AquaPushPullTest is AquaTestBase {
 
         // Try to push token2 (not shipped)
         vm.prank(pusher);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IAqua.PushToNonActiveStrategyPrevented.selector,
-                maker,
-                app,
-                keccak256("strategy6"),
-                address(token2)
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(IAqua.PushToNonActiveStrategyPrevented.selector, maker, app, keccak256("strategy6"), address(token2)));
         aqua.push(maker, app, keccak256("strategy6"), address(token2), 50e18);
     }
 

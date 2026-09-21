@@ -17,12 +17,7 @@ contract AquaLifecycleTest is AquaTestBase {
 
         // 1. Ship with 2 tokens
         vm.prank(maker);
-        aqua.ship(
-            app,
-            "lifecycle",
-            dynamic([address(token1), address(token2)]),
-            dynamic([uint256(100e18), uint256(200e18)])
-        );
+        aqua.ship(app, "lifecycle", dynamic([address(token1), address(token2)]), dynamic([uint256(100e18), uint256(200e18)]));
 
         // 2. Push to token1
         vm.prank(pusher);
@@ -42,15 +37,7 @@ contract AquaLifecycleTest is AquaTestBase {
 
         // 5. Verify can't push after dock
         vm.prank(pusher);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IAqua.PushToNonActiveStrategyPrevented.selector,
-                maker,
-                app,
-                strategyHash,
-                address(token1)
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(IAqua.PushToNonActiveStrategyPrevented.selector, maker, app, strategyHash, address(token1)));
         aqua.push(maker, app, strategyHash, address(token1), 10e18);
 
         // 6. Verify balances are zero after dock
@@ -65,21 +52,11 @@ contract AquaLifecycleTest is AquaTestBase {
 
         // Ship strategy 1
         vm.prank(maker);
-        aqua.ship(
-            app,
-            "multi1",
-            dynamic([address(token1), address(token2)]),
-            dynamic([uint256(100e18), uint256(200e18)])
-        );
+        aqua.ship(app, "multi1", dynamic([address(token1), address(token2)]), dynamic([uint256(100e18), uint256(200e18)]));
 
         // Ship strategy 2 with same tokens but different salt
         vm.prank(maker);
-        aqua.ship(
-            app,
-            "multi2",
-            dynamic([address(token1), address(token2)]),
-            dynamic([uint256(300e18), uint256(400e18)])
-        );
+        aqua.ship(app, "multi2", dynamic([address(token1), address(token2)]), dynamic([uint256(300e18), uint256(400e18)]));
 
         // Verify both strategies work independently
         bytes32 hash1 = keccak256("multi1");

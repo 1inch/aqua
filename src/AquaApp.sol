@@ -59,12 +59,7 @@ abstract contract AquaApp {
     /// @param strategyHash The hash of the strategy
     /// @param token The token address to verify
     /// @param expectedBalance The minimum expected balance after the push
-    function _safeCheckAquaPush(
-        address maker,
-        bytes32 strategyHash,
-        address token,
-        uint256 expectedBalance
-    ) internal view {
+    function _safeCheckAquaPush(address maker, bytes32 strategyHash, address token, uint256 expectedBalance) internal view {
         // Check that the swap function is reentrancy protected to prevent nested swaps
         require(_reentrancyLocks[maker][strategyHash].isLocked(), MissingNonReentrantModifier());
 

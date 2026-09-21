@@ -52,12 +52,7 @@ contract AquaStorageTest is AquaTestBase {
     function testShip2Tokens() public {
         vm.record();
         vm.prank(maker);
-        aqua.ship(
-            address(this),
-            "ship2",
-            dynamic([address(token1), address(token2)]),
-            dynamic([uint256(100e18), uint256(200e18)])
-        );
+        aqua.ship(address(this), "ship2", dynamic([address(token1), address(token2)]), dynamic([uint256(100e18), uint256(200e18)]));
 
         (bytes32[] memory reads, bytes32[] memory writes) = vm.accesses(address(aqua));
         StorageAccesses.assertEq(vm, 2, 2, reads, writes, "Ship 2 tokens");
@@ -96,12 +91,7 @@ contract AquaStorageTest is AquaTestBase {
     function testDock2Tokens() public {
         // First ship
         vm.prank(maker);
-        aqua.ship(
-            address(this),
-            "dock2",
-            dynamic([address(token1), address(token2)]),
-            dynamic([uint256(100e18), uint256(200e18)])
-        );
+        aqua.ship(address(this), "dock2", dynamic([address(token1), address(token2)]), dynamic([uint256(100e18), uint256(200e18)]));
 
         // Test dock storage operations
         vm.record();

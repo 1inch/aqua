@@ -60,12 +60,7 @@ contract AquaShipDockTest is AquaTestBase {
 
         // First ship with token1 and token2
         vm.prank(maker);
-        aqua.ship(
-            app,
-            "shared_strategy",
-            dynamic([address(token1), address(token2)]),
-            dynamic([uint256(100e18), uint256(200e18)])
-        );
+        aqua.ship(app, "shared_strategy", dynamic([address(token1), address(token2)]), dynamic([uint256(100e18), uint256(200e18)]));
 
         // Verify initial state
         (uint256 balance1, uint8 tokensCount1) = aqua.rawBalances(maker, app, strategyHash, address(token1));
@@ -95,52 +90,28 @@ contract AquaShipDockTest is AquaTestBase {
     function testShipSameStrategyHashPartiallyOverlappingTokensReverts() public {
         // First ship with token1 and token2
         vm.prank(maker);
-        aqua.ship(
-            app,
-            "overlap_strategy",
-            dynamic([address(token1), address(token2)]),
-            dynamic([uint256(100e18), uint256(200e18)])
-        );
+        aqua.ship(app, "overlap_strategy", dynamic([address(token1), address(token2)]), dynamic([uint256(100e18), uint256(200e18)]));
 
         // Try to ship again with partially overlapping tokens (token1 exists, token3 is new)
         // Should revert when it encounters token1 which already has tokensCount > 0
         vm.prank(maker);
-        vm.expectRevert(
-            abi.encodeWithSelector(IAqua.StrategiesMustBeImmutable.selector, app, keccak256("overlap_strategy"))
-        );
-        aqua.ship(
-            app,
-            "overlap_strategy",
-            dynamic([address(token1), address(token3)]),
-            dynamic([uint256(50e18), uint256(150e18)])
-        );
+        vm.expectRevert(abi.encodeWithSelector(IAqua.StrategiesMustBeImmutable.selector, app, keccak256("overlap_strategy")));
+        aqua.ship(app, "overlap_strategy", dynamic([address(token1), address(token3)]), dynamic([uint256(50e18), uint256(150e18)]));
     }
 
     function testShipCannotHaveDuplicateTokens() public {
         // The contract prevents duplicate tokens in the same ship call
         // because it checks tokensCount == 0 for each token
         vm.prank(maker);
-        vm.expectRevert(
-            abi.encodeWithSelector(IAqua.StrategiesMustBeImmutable.selector, app, keccak256("strategy_dup"))
-        );
-        aqua.ship(
-            app,
-            "strategy_dup",
-            dynamic([address(token1), address(token1)]),
-            dynamic([uint256(100e18), uint256(200e18)])
-        );
+        vm.expectRevert(abi.encodeWithSelector(IAqua.StrategiesMustBeImmutable.selector, app, keccak256("strategy_dup")));
+        aqua.ship(app, "strategy_dup", dynamic([address(token1), address(token1)]), dynamic([uint256(100e18), uint256(200e18)]));
     }
 
     function testShipWithLargeAmountsPreservesTokenCount() public {
         // Ship with large amounts to verify tokensCount is not overwritten by balance
         // The Balance struct packs amount (uint248) and tokensCount (uint8) in one slot
         vm.prank(maker);
-        aqua.ship(
-            app,
-            "strategy_large",
-            dynamic([address(token1), address(token2)]),
-            dynamic([uint256(1000e18), uint256(2000e18)])
-        );
+        aqua.ship(app, "strategy_large", dynamic([address(token1), address(token2)]), dynamic([uint256(1000e18), uint256(2000e18)]));
 
         bytes32 strategyHash = keccak256("strategy_large");
 
@@ -168,12 +139,7 @@ contract AquaShipDockTest is AquaTestBase {
         amount2 = uint248(bound(amount2, 0, 10000e18));
 
         vm.prank(maker);
-        aqua.ship(
-            app,
-            "strategy_fuzz",
-            dynamic([address(token1), address(token2)]),
-            dynamic([uint256(amount1), uint256(amount2)])
-        );
+        aqua.ship(app, "strategy_fuzz", dynamic([address(token1), address(token2)]), dynamic([uint256(amount1), uint256(amount2)]));
 
         bytes32 strategyHash = keccak256("strategy_fuzz");
 
@@ -214,63 +180,40 @@ contract AquaShipDockTest is AquaTestBase {
     function testDockRequiresAllTokensFromShip() public {
         // Ship with 2 tokens
         vm.prank(maker);
-        aqua.ship(
-            app,
-            "strategy2",
-            dynamic([address(token1), address(token2)]),
-            dynamic([uint256(100e18), uint256(200e18)])
-        );
+        aqua.ship(app, "strategy2", dynamic([address(token1), address(token2)]), dynamic([uint256(100e18), uint256(200e18)]));
 
         // Try to dock with only 1 token
         vm.prank(maker);
-        vm.expectRevert(
-            abi.encodeWithSelector(IAqua.DockingShouldCloseAllTokens.selector, app, keccak256("strategy2"))
-        );
+        vm.expectRevert(abi.encodeWithSelector(IAqua.DockingShouldCloseAllTokens.selector, app, keccak256("strategy2")));
         aqua.dock(app, keccak256("strategy2"), dynamic([address(token1)]));
     }
 
     function testDockRequiresExactTokensFromShip() public {
         // Ship with specific tokens
         vm.prank(maker);
-        aqua.ship(
-            app,
-            "strategy3",
-            dynamic([address(token1), address(token2)]),
-            dynamic([uint256(100e18), uint256(200e18)])
-        );
+        aqua.ship(app, "strategy3", dynamic([address(token1), address(token2)]), dynamic([uint256(100e18), uint256(200e18)]));
 
         // Try to dock with different token
         vm.prank(maker);
-        vm.expectRevert(
-            abi.encodeWithSelector(IAqua.DockingShouldCloseAllTokens.selector, app, keccak256("strategy3"))
-        );
+        vm.expectRevert(abi.encodeWithSelector(IAqua.DockingShouldCloseAllTokens.selector, app, keccak256("strategy3")));
         aqua.dock(app, keccak256("strategy3"), dynamic([address(token1), address(token3)]));
     }
 
     function testDockRequiresCorrectTokenCount() public {
         // Ship with 2 tokens
         vm.prank(maker);
-        aqua.ship(
-            app,
-            "strategy4",
-            dynamic([address(token1), address(token2)]),
-            dynamic([uint256(100e18), uint256(200e18)])
-        );
+        aqua.ship(app, "strategy4", dynamic([address(token1), address(token2)]), dynamic([uint256(100e18), uint256(200e18)]));
 
         // Try to dock with 3 tokens
         vm.prank(maker);
-        vm.expectRevert(
-            abi.encodeWithSelector(IAqua.DockingShouldCloseAllTokens.selector, app, keccak256("strategy4"))
-        );
+        vm.expectRevert(abi.encodeWithSelector(IAqua.DockingShouldCloseAllTokens.selector, app, keccak256("strategy4")));
         aqua.dock(app, keccak256("strategy4"), dynamic([address(token1), address(token2), address(token3)]));
     }
 
     function testDockNonExistentStrategyReverts() public {
         // Try to dock a strategy that was never shipped
         vm.prank(maker);
-        vm.expectRevert(
-            abi.encodeWithSelector(IAqua.DockingShouldCloseAllTokens.selector, app, keccak256("nonexistent"))
-        );
+        vm.expectRevert(abi.encodeWithSelector(IAqua.DockingShouldCloseAllTokens.selector, app, keccak256("nonexistent")));
         aqua.dock(app, keccak256("nonexistent"), dynamic([address(token1)]));
     }
 
@@ -285,9 +228,7 @@ contract AquaShipDockTest is AquaTestBase {
 
         // Try to dock again - should fail because tokensCount is now _DOCKED (255)
         vm.prank(maker);
-        vm.expectRevert(
-            abi.encodeWithSelector(IAqua.DockingShouldCloseAllTokens.selector, app, keccak256("dock_twice"))
-        );
+        vm.expectRevert(abi.encodeWithSelector(IAqua.DockingShouldCloseAllTokens.selector, app, keccak256("dock_twice")));
         aqua.dock(app, keccak256("dock_twice"), dynamic([address(token1)]));
     }
 
@@ -298,12 +239,7 @@ contract AquaShipDockTest is AquaTestBase {
 
         // 1. Ship with specific tokens and amounts
         vm.prank(maker);
-        aqua.ship(
-            app,
-            "reship",
-            dynamic([address(token1), address(token2)]),
-            dynamic([uint256(100e18), uint256(200e18)])
-        );
+        aqua.ship(app, "reship", dynamic([address(token1), address(token2)]), dynamic([uint256(100e18), uint256(200e18)]));
 
         // Verify initial balances
         (uint256 balance1, ) = aqua.rawBalances(maker, app, strategyHash, address(token1));
@@ -325,11 +261,6 @@ contract AquaShipDockTest is AquaTestBase {
         // Strategies are immutable: once docked, cannot be re-shipped with the same salt
         vm.prank(maker);
         vm.expectRevert(abi.encodeWithSelector(IAqua.StrategiesMustBeImmutable.selector, app, strategyHash));
-        aqua.ship(
-            app,
-            "reship",
-            dynamic([address(token1), address(token2)]),
-            dynamic([uint256(100e18), uint256(200e18)])
-        );
+        aqua.ship(app, "reship", dynamic([address(token1), address(token2)]), dynamic([uint256(100e18), uint256(200e18)]));
     }
 }
