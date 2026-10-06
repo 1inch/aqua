@@ -29,7 +29,7 @@ jobs:
         uses: actions/github-script@v9
         with:
           script: |
-            let ref = 'main'; // default fallback
+            let ref = 'master'; // default fallback
             
             // For PR-related events
             if (context.eventName === 'pull_request_review_comment' || context.eventName === 'pull_request_review') {
@@ -78,10 +78,10 @@ jobs:
                   ref = result.repository.issue.linkedBranches.nodes[0].ref.name;
                   console.log(`Using linked branch: ${ref}`);
                 } else {
-                  console.log('No linked branch found, using main');
+                  console.log('No linked branch found, using master');
                 }
               } catch (error) {
-                console.log('Error fetching linked branches, using main:', error);
+                console.log('Error fetching linked branches, using master:', error);
               }
             }
             

@@ -1,0 +1,12 @@
+name: CHECK_PACKAGE_VERSION
+
+on:
+  pull_request:
+    branches: [ 'release/**' ]
+
+permissions:
+  contents: read
+
+jobs:
+  check-package-version:
+    uses: 1inch/ci-workflow-protocol/.github/workflows/check-version.yml@master
