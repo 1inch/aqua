@@ -1,11 +1,11 @@
 # Aqua Protocol
 
-**Release flow:** `master` for development, one `release/X.Y.Z` branch per release, tags `vX.Y.Z` set by the `TAG` workflow — see [RELEASE_FLOW.md](https://github.com/1inch/ci-workflow-protocol/blob/master/RELEASE_FLOW.md).
+**Release flow:** `main` for development, one `release/X.Y.Z` branch per release, tags `vX.Y.Z` set by the `TAG` workflow — see [RELEASE_FLOW.md](https://github.com/1inch/ci-workflow-protocol/blob/main/RELEASE_FLOW.md).
 
 [![Github Release](https://img.shields.io/github/v/tag/1inch/aqua?sort=semver&label=github)](https://github.com/1inch/aqua/releases/latest)
 [![CI](https://github.com/1inch/aqua/actions/workflows/ci.yml/badge.svg)](https://github.com/1inch/aqua/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/Coverage-61.54%25-yellow)](https://github.com/1inch/aqua)
-[![Tests](https://img.shields.io/github/actions/workflow/status/1inch/aqua/ci.yml?branch=master&label=tests)](https://github.com/1inch/aqua/actions)
+[![Tests](https://img.shields.io/github/actions/workflow/status/1inch/aqua/ci.yml?branch=main&label=tests)](https://github.com/1inch/aqua/actions)
 [![npm](https://img.shields.io/npm/v/@1inch/aqua.svg)](https://www.npmjs.com/package/@1inch/aqua)
 [![License](https://img.shields.io/badge/License-Degensoft--Aqua--Source--1.1-orange)](LICENSE)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.30-blue)](https://docs.soliditylang.org/en/v0.8.30/)
