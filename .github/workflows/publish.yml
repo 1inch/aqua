@@ -1,0 +1,14 @@
+name: PUBLISH
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish-npmjs:
+    permissions:
+      contents: read
+      id-token: write
+    uses: 1inch/ci-workflow-protocol/.github/workflows/publish.yml@v1.1.0
