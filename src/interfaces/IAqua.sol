@@ -75,7 +75,12 @@ interface IAqua {
     /// @param token The address of the token
     /// @return balance The current balance amount
     /// @return tokensCount The number of tokens in the strategy
-    function rawBalances(address maker, address app, bytes32 strategyHash, address token) external view returns (uint248 balance, uint8 tokensCount);
+    function rawBalances(
+        address maker,
+        address app,
+        bytes32 strategyHash,
+        address token
+    ) external view returns (uint248 balance, uint8 tokensCount);
 
     /// @notice Returns balances of multiple tokens in a strategy, reverts if any of the tokens is not part of the active strategy
     /// @param maker The address of the maker who granted the balances
@@ -85,7 +90,13 @@ interface IAqua {
     /// @param token1 The address of the second token
     /// @return balance0 The current balance amount for the first token
     /// @return balance1 The current balance amount for the second token
-    function safeBalances(address maker, address app, bytes32 strategyHash, address token0, address token1) external view returns (uint256 balance0, uint256 balance1);
+    function safeBalances(
+        address maker,
+        address app,
+        bytes32 strategyHash,
+        address token0,
+        address token1
+    ) external view returns (uint256 balance0, uint256 balance1);
 
     /// @notice Ships a new strategy as of an app and sets initial balances
     /// @dev Parameter `strategy` is presented fully instead of being pre-hashed for data availability
@@ -98,7 +109,7 @@ interface IAqua {
         bytes calldata strategy,
         address[] calldata tokens,
         uint256[] calldata amounts
-    ) external returns(bytes32 strategyHash);
+    ) external returns (bytes32 strategyHash);
 
     /// @notice Docks (deactivates) a strategy by clearing balances for specified tokens
     /// @dev Sets balances to 0 for all specified tokens

@@ -27,32 +27,36 @@ contract AquaLifecycleTest is AquaTestBase {
         // 2. Push to token1
         vm.prank(pusher);
         aqua.push(maker, app, strategyHash, address(token1), 50e18);
-        (newBalance,) = aqua.rawBalances(maker, app, strategyHash, address(token1));
+        (newBalance, ) = aqua.rawBalances(maker, app, strategyHash, address(token1));
         assertEq(newBalance, 150e18);
 
         // 3. Pull from app
         vm.prank(app);
         aqua.pull(maker, strategyHash, address(token1), 30e18, app);
-        (newBalance,) = aqua.rawBalances(maker, app, strategyHash, address(token1));
+        (newBalance, ) = aqua.rawBalances(maker, app, strategyHash, address(token1));
         assertEq(newBalance, 120e18);
 
         // 4. Dock all tokens
         vm.prank(maker);
-        aqua.dock(
-            app,
-            strategyHash,
-            dynamic([address(token1), address(token2)])
-        );
+        aqua.dock(app, strategyHash, dynamic([address(token1), address(token2)]));
 
         // 5. Verify can't push after dock
         vm.prank(pusher);
-        vm.expectRevert(abi.encodeWithSelector(IAqua.PushToNonActiveStrategyPrevented.selector, maker, app, strategyHash, address(token1)));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAqua.PushToNonActiveStrategyPrevented.selector,
+                maker,
+                app,
+                strategyHash,
+                address(token1)
+            )
+        );
         aqua.push(maker, app, strategyHash, address(token1), 10e18);
 
         // 6. Verify balances are zero after dock
-        (newBalance,) = aqua.rawBalances(maker, app, strategyHash, address(token1));
+        (newBalance, ) = aqua.rawBalances(maker, app, strategyHash, address(token1));
         assertEq(newBalance, 0);
-        (newBalance,) = aqua.rawBalances(maker, app, strategyHash, address(token2));
+        (newBalance, ) = aqua.rawBalances(maker, app, strategyHash, address(token2));
         assertEq(newBalance, 0);
     }
 
@@ -81,18 +85,18 @@ contract AquaLifecycleTest is AquaTestBase {
         bytes32 hash1 = keccak256("multi1");
         bytes32 hash2 = keccak256("multi2");
 
-        (newBalance,) = aqua.rawBalances(maker, app, hash1, address(token1));
+        (newBalance, ) = aqua.rawBalances(maker, app, hash1, address(token1));
         assertEq(newBalance, 100e18);
-        (newBalance,) = aqua.rawBalances(maker, app, hash2, address(token1));
+        (newBalance, ) = aqua.rawBalances(maker, app, hash2, address(token1));
         assertEq(newBalance, 300e18);
 
         // Push to strategy 1 doesn't affect strategy 2
         vm.prank(pusher);
         aqua.push(maker, app, hash1, address(token1), 50e18);
 
-        (newBalance,) = aqua.rawBalances(maker, app, hash1, address(token1));
+        (newBalance, ) = aqua.rawBalances(maker, app, hash1, address(token1));
         assertEq(newBalance, 150e18);
-        (newBalance,) = aqua.rawBalances(maker, app, hash2, address(token1));
+        (newBalance, ) = aqua.rawBalances(maker, app, hash2, address(token1));
         assertEq(newBalance, 300e18);
 
         // Can dock strategies independently
@@ -100,9 +104,9 @@ contract AquaLifecycleTest is AquaTestBase {
         aqua.dock(app, hash1, dynamic([address(token1), address(token2)]));
 
         // Strategy 1 is docked, strategy 2 still active
-        (newBalance,) = aqua.rawBalances(maker, app, hash1, address(token1));
+        (newBalance, ) = aqua.rawBalances(maker, app, hash1, address(token1));
         assertEq(newBalance, 0);
-        (newBalance,) = aqua.rawBalances(maker, app, hash2, address(token1));
+        (newBalance, ) = aqua.rawBalances(maker, app, hash2, address(token1));
         assertEq(newBalance, 300e18);
     }
 }

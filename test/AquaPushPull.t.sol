@@ -15,46 +15,56 @@ contract AquaPushPullTest is AquaTestBase {
     function testPushRequiresActiveStrategy() public {
         // Try to push without ship
         vm.prank(pusher);
-        vm.expectRevert(abi.encodeWithSelector(IAqua.PushToNonActiveStrategyPrevented.selector, maker, app, keccak256("nonexistent"), address(token1)));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAqua.PushToNonActiveStrategyPrevented.selector,
+                maker,
+                app,
+                keccak256("nonexistent"),
+                address(token1)
+            )
+        );
         aqua.push(maker, app, keccak256("nonexistent"), address(token1), 100e18);
     }
 
     function testPushFailsAfterDock() public {
         // Ship and then dock
         vm.prank(maker);
-        aqua.ship(
-            app,
-            "strategy5",
-            dynamic([address(token1)]),
-            dynamic([uint256(100e18)])
-        );
+        aqua.ship(app, "strategy5", dynamic([address(token1)]), dynamic([uint256(100e18)]));
 
         vm.prank(maker);
-        aqua.dock(
-            app,
-            keccak256("strategy5"),
-            dynamic([address(token1)])
-        );
+        aqua.dock(app, keccak256("strategy5"), dynamic([address(token1)]));
 
         // Try to push after dock
         vm.prank(pusher);
-        vm.expectRevert(abi.encodeWithSelector(IAqua.PushToNonActiveStrategyPrevented.selector, maker, app, keccak256("strategy5"), address(token1)));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAqua.PushToNonActiveStrategyPrevented.selector,
+                maker,
+                app,
+                keccak256("strategy5"),
+                address(token1)
+            )
+        );
         aqua.push(maker, app, keccak256("strategy5"), address(token1), 50e18);
     }
 
     function testPushOnlyForShippedTokens() public {
         // Ship with token1 only
         vm.prank(maker);
-        aqua.ship(
-            app,
-            "strategy6",
-            dynamic([address(token1)]),
-            dynamic([uint256(100e18)])
-        );
+        aqua.ship(app, "strategy6", dynamic([address(token1)]), dynamic([uint256(100e18)]));
 
         // Try to push token2 (not shipped)
         vm.prank(pusher);
-        vm.expectRevert(abi.encodeWithSelector(IAqua.PushToNonActiveStrategyPrevented.selector, maker, app, keccak256("strategy6"), address(token2)));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAqua.PushToNonActiveStrategyPrevented.selector,
+                maker,
+                app,
+                keccak256("strategy6"),
+                address(token2)
+            )
+        );
         aqua.push(maker, app, keccak256("strategy6"), address(token2), 50e18);
     }
 
@@ -63,12 +73,7 @@ contract AquaPushPullTest is AquaTestBase {
     function testPullRevertsOnInsufficientBalance() public {
         // Ship a strategy with 100 tokens
         vm.prank(maker);
-        aqua.ship(
-            app,
-            "pull_underflow",
-            dynamic([address(token1)]),
-            dynamic([uint256(100e18)])
-        );
+        aqua.ship(app, "pull_underflow", dynamic([address(token1)]), dynamic([uint256(100e18)]));
 
         // Try to pull more than available - should revert (arithmetic underflow)
         vm.prank(app);
@@ -86,19 +91,10 @@ contract AquaPushPullTest is AquaTestBase {
     function testPullAfterDockRevertsOnUnderflow() public {
         // Ship and dock a strategy
         vm.prank(maker);
-        aqua.ship(
-            app,
-            "pull_docked",
-            dynamic([address(token1)]),
-            dynamic([uint256(100e18)])
-        );
+        aqua.ship(app, "pull_docked", dynamic([address(token1)]), dynamic([uint256(100e18)]));
 
         vm.prank(maker);
-        aqua.dock(
-            app,
-            keccak256("pull_docked"),
-            dynamic([address(token1)])
-        );
+        aqua.dock(app, keccak256("pull_docked"), dynamic([address(token1)]));
 
         // Try to pull after dock - balance is 0, so will underflow
         vm.prank(app);
@@ -125,7 +121,7 @@ contract AquaPushPullTest is AquaTestBase {
         vm.prank(pusher);
         aqua.push(maker, app, strategyHash, address(token1), 1000e18);
 
-        (uint256 balance,) = aqua.rawBalances(maker, app, strategyHash, address(token1));
+        (uint256 balance, ) = aqua.rawBalances(maker, app, strategyHash, address(token1));
         assertEq(balance, 10000e18);
     }
 
@@ -135,12 +131,7 @@ contract AquaPushPullTest is AquaTestBase {
 
         // Ship a strategy
         vm.prank(maker);
-        aqua.ship(
-            app,
-            "strategy_uint248_overflow",
-            dynamic([address(token1)]),
-            dynamic([uint256(100e18)])
-        );
+        aqua.ship(app, "strategy_uint248_overflow", dynamic([address(token1)]), dynamic([uint256(100e18)]));
 
         bytes32 strategyHash = keccak256("strategy_uint248_overflow");
 
@@ -159,17 +150,12 @@ contract AquaPushPullTest is AquaTestBase {
         uint256 largeInitialBalance = uint256(type(uint248).max) - 100e18;
 
         vm.prank(maker);
-        aqua.ship(
-            app,
-            "strategy_balance_overflow",
-            dynamic([address(token1)]),
-            dynamic([largeInitialBalance])
-        );
+        aqua.ship(app, "strategy_balance_overflow", dynamic([address(token1)]), dynamic([largeInitialBalance]));
 
         bytes32 strategyHash = keccak256("strategy_balance_overflow");
 
         // Verify initial balance
-        (uint256 balance,) = aqua.rawBalances(maker, app, strategyHash, address(token1));
+        (uint256 balance, ) = aqua.rawBalances(maker, app, strategyHash, address(token1));
         assertEq(balance, largeInitialBalance);
 
         // Try to push an amount that would cause prevBalance + amount to overflow uint248
@@ -185,11 +171,6 @@ contract AquaPushPullTest is AquaTestBase {
 
         vm.prank(maker);
         vm.expectRevert(); // SafeCast overflow
-        aqua.ship(
-            app,
-            "strategy_ship_overflow",
-            dynamic([address(token1)]),
-            dynamic([tooLargeAmount])
-        );
+        aqua.ship(app, "strategy_ship_overflow", dynamic([address(token1)]), dynamic([tooLargeAmount]));
     }
 }

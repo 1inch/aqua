@@ -20,6 +20,8 @@
     "@nomicfoundation/hardhat-viem": "3.0.9",
     "hardhat": "3.17.0",
     "hardhat-ignore-warnings": "0.3.0",
+    "prettier": "3.8.3",
+    "prettier-plugin-solidity": "2.3.1",
     "viem": "2.52.0",
     "@noble/hashes": "1.8.0"
   },
@@ -33,7 +35,9 @@
     "build": "npx hardhat build",
     "test": "npx hardhat test solidity",
     "snapshot": "npx hardhat test solidity --snapshot --grep-exclude testFuzz",
-    "snapshot:check": "npx hardhat test solidity --snapshot-check --tolerance 5 --grep-exclude testFuzz"
+    "snapshot:check": "npx hardhat test solidity --snapshot-check --tolerance 5 --grep-exclude testFuzz",
+    "format": "prettier --write \"{src,test,script,examples}/**/*.sol\"",
+    "lint": "prettier --check \"{src,test,script,examples}/**/*.sol\""
   },
   "repository": {
     "type": "git",
