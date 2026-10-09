@@ -4,6 +4,14 @@
   "description": "Shared liquidity layer protocol",
   "type": "module",
   "main": "index.js",
+  "files": [
+    "src",
+    "LICENSES",
+    "THIRD_PARTY_NOTICES"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "directories": {
     "test": "test"
   },

@@ -1,51 +1,21 @@
 name: CI
 on:
-  push:
-    branches:
-      - main
   pull_request:
+  push:
+    branches: [main]
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
 
 jobs:
-  run-ci:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: yarn
-
-      - name: Create GitHub App Token
-        uses: actions/create-github-app-token@v3
-        id: app-token
-        with:
-          app-id: ${{ secrets.CI_ROBOT_APP_ID }}
-          private-key: ${{ secrets.CI_ROBOT_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-
-      - name: Setup git credentials for GitHub App
-        run: |
-          git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf "https://github.com/"
-          git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf "git@github.com:"
-          git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf "ssh://git@github.com/"
-
-      - name: Install node modules
-        run: yarn install --frozen-lockfile
-
-      - name: Check gas snapshots
-        run: yarn snapshot:check
-
-      - name: Run tests
-        run: yarn test
+  ci:
+    uses: 1inch/ci-workflow-protocol/.github/workflows/hardhat-ci.yml@v2.0.1
+    with:
+      profile: default
+      sources: src
+      snapshot: true
+      lint: true

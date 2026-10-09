@@ -1,0 +1,11 @@
+name: CREATE_RELEASE
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    uses: 1inch/ci-workflow-protocol/.github/workflows/release.yml@v2.0.1

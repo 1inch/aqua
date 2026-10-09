@@ -1,0 +1,16 @@
+{
+    "extends": "solhint:recommended",
+    "rules": {
+        "compiler-version": ["error", "^0.8.0"],
+        "private-vars-leading-underscore": "error",
+        "no-global-import": "off",
+        "func-visibility": ["error", { "ignoreConstructors": true }],
+        "max-line-length": ["error", 140],
+        "no-inline-assembly": "off",
+        "use-natspec": "off",
+        "gas-custom-errors": "off",
+        "gas-indexed-events": "off",
+        "gas-increment-by-one": "off",
+        "gas-strict-inequalities": "off"
+    }
+}
