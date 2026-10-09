@@ -44,13 +44,6 @@ export default defineConfig({
       accounts: [configVariable("SEPOLIA_PRIVATE_KEY")],
     },
   },
-  test: {
-    solidity: {
-      fsPermissions: {
-        dangerouslyReadWriteDirectory: ["./deployments", "./config"],
-      },
-    },
-  },
   verify: {
     etherscan: {
       apiKey: configVariable("ETHERSCAN_API_KEY"),

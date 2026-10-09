@@ -7,7 +7,6 @@
 [![npm](https://img.shields.io/npm/v/@1inch/aqua.svg)](https://www.npmjs.com/package/@1inch/aqua)
 [![License](https://img.shields.io/badge/License-Degensoft--Aqua--Source--1.1-orange)](LICENSE)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.30-blue)](https://docs.soliditylang.org/en/v0.8.30/)
-[![Foundry](https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg)](https://book.getfoundry.sh/)
 [![Whitepaper](https://img.shields.io/badge/Whitepaper-Dev%20Preview-informational)](whitepaper/aqua-dev-preview.md)
 
 Shared liquidity layer protocol enabling liquidity providers to allocate balances across multiple trading strategies without fragmentation.
@@ -476,10 +475,10 @@ git clone https://github.com/1inch/aqua
 cd aqua
 
 # Install dependencies
-forge install
+yarn install
 
 # Run tests
-forge test
+yarn test
 ```
 
 ## Deployments
