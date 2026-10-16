@@ -34,14 +34,6 @@ Deploy with `hardhat ignition` through a wrapped script that injects the `owner`
 npx hardhat run ./script/deployAquaRouter.ts --network <network>
 ```
 
-### Automation Mode (Automated deployment framework)
-
-For automated deployments .env.automation file will be created automatically and deployment is launched with:
-
-```bash
-OPS_LAUNCH_MODE=auto make deploy-aqua-router
-```
-
 ### Deployment Artifacts
 
 Deployment information is saved in:
@@ -52,20 +44,22 @@ Deployment information is saved in:
 
 ### Development Tools
 
-| Command         | Description                       |
-| --------------- | --------------------------------- |
-| `make build`    | Compile all contracts             |
-| `make tests`    | Run test suite with gas reporting |
-| `make coverage` | Generate code coverage report     |
-| `make snapshot` | Create gas snapshot               |
-| `make format`   | Format code using Forge formatter |
-| `make lint`     | Check code formatting             |
-| `make clean`    | Clean build artifacts             |
+| Command                                 | Description                              |
+| --------------------------------------- | ---------------------------------------- |
+| `yarn build`                            | Compile all contracts                    |
+| `yarn test`                             | Run test suite                           |
+| `npx hardhat test solidity --gas-stats` | Run test suite with gas reporting        |
+| `npx hardhat test solidity --coverage`  | Generate code coverage report            |
+| `yarn snapshot`                         | Create gas snapshot                      |
+| `yarn snapshot:check`                   | Check gas against the committed snapshot |
+| `yarn format`                           | Format code using Prettier               |
+| `yarn lint`                             | Check code formatting                    |
+| `npx hardhat clean`                     | Clean build artifacts                    |
 
 ### Local Development
 
 Start local development node fork:
 
 ```bash
-make node NODE_URL=<your-rpc-url>
+npx hardhat node --fork <your-rpc-url>
 ```
