@@ -1,6 +1,6 @@
 {
   "name": "@1inch/aqua",
-  "version": "0.1.0",
+  "version": "1.0.1",
   "description": "Shared liquidity layer protocol",
   "type": "module",
   "main": "index.js",
@@ -16,11 +16,11 @@
     "test": "test"
   },
   "dependencies": {
-    "forge-std": "github:foundry-rs/forge-std#v1.11.0",
     "@1inch/solidity-utils": "6.9.9",
     "@openzeppelin/contracts": "5.4.0"
   },
   "devDependencies": {
+    "forge-std": "github:foundry-rs/forge-std#v1.11.0",
     "@nomicfoundation/hardhat-ignition-viem": "3.1.6",
     "@nomicfoundation/hardhat-ignition": "3.1.8",
     "@nomicfoundation/hardhat-keystore": "3.0.12",
