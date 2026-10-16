@@ -4,7 +4,7 @@ Aqua is deployed with [Hardhat Ignition](https://hardhat.org/ignition) and verif
 
 ## Prerequisites
 
-- Node.js + Yarn (`yarn install`)
+- Node.js and Yarn, with dependencies installed as in [Getting Started in the README](README.md#getting-started)
 - A funded deployer key and an RPC URL for the target network
 - For verification: an Etherscan API key (v2 — a single key works across all chains)
 
