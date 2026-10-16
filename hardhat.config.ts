@@ -30,7 +30,7 @@ export default defineConfig({
     },
   },
   paths: {
-    sources: "./src",
+    sources: "./contracts",
   },
   networks: {
     localhost: {

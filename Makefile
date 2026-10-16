@@ -49,7 +49,7 @@ verify-aqua-router-impl:
 	    CONTRACT_ADDRESS=$$($(MAKE) contract-address DEPLOYMENT_FILE=$$DEPLOYMENT_FILE); \
 	    echo "Verifying $${FILE_DEPLOY_NAME} at $$CONTRACT_ADDRESS on $(OPS_NETWORK)..."; \
 	    forge verify-contract $$CONTRACT_ADDRESS \
-	        src/$${FILE_DEPLOY_NAME}.sol:$${FILE_DEPLOY_NAME} \
+	        contracts/$${FILE_DEPLOY_NAME}.sol:$${FILE_DEPLOY_NAME} \
             --skip-is-verified-check \
             --rpc-url $(RPC_URL) \
 	        --chain-id $(OPS_CHAIN_ID) \

@@ -1,4 +1,5 @@
 [profile.default]
+src = "contracts"
 # Pinned because Foundry otherwise detects the Hardhat project and defaults `out`
 # to ./artifacts, where `hardhat build` prunes whatever Foundry wrote there.
 out = "out"
@@ -12,7 +13,7 @@ fs_permissions = [
     { access = "read-write", path = "./config" }
 ]
 # Kept here rather than in remappings.txt, which Hardhat also reads and which
-# only needs `src/=src/`. Foundry's auto-detection maps forge-std to the package
+# only needs `contracts/=contracts/`. Foundry's auto-detection maps forge-std to the package
 # root instead of its src/ directory, so the deploy scripts need these explicitly.
 remappings = [
     "forge-std/=node_modules/forge-std/src/",

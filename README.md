@@ -1,3 +1,8 @@
+<div align="center">
+    <img src="https://raw.githubusercontent.com/1inch/aqua/main/.github/1inch_github_w.svg#gh-light-mode-only" alt="1inch">
+    <img src="https://raw.githubusercontent.com/1inch/aqua/main/.github/1inch_github_b.svg#gh-dark-mode-only" alt="1inch">
+</div>
+
 # Aqua Protocol
 
 **Release flow:** `main` for development, one `release/X.Y.Z` branch per release, tags `vX.Y.Z` set by the `TAG` workflow — see [RELEASE_FLOW.md](https://github.com/1inch/ci-workflow-protocol/blob/main/RELEASE_FLOW.md).
@@ -475,7 +480,7 @@ function _safeCheckAquaPush(
 
 | Path | Contents |
 |---|---|
-| `src/` | Protocol contracts: `Aqua` (the shared liquidity registry), `AquaRouter` (the deployed entry point, which adds simulation, multicall and token rescue), the `AquaApp` base contract for strategy apps, the `IAqua` interface and the `BalanceLib` library |
+| `contracts/` | Protocol contracts: `Aqua` (the shared liquidity registry), `AquaRouter` (the deployed entry point, which adds simulation, multicall and token rescue), the `AquaApp` base contract for strategy apps, the `IAqua` interface and the `BalanceLib` library |
 | `test/` | Solidity tests run by Hardhat, with a shared test base, an ERC-20 mock and test utilities |
 | `examples/` | `XYCSwap`, an example constant-product AMM built on `AquaApp`, with its callback interface and tests |
 | `script/` | `AquaRouter` deployment scripts for Foundry and Hardhat, and helpers that read deployment parameters from `config/` |

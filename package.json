@@ -5,7 +5,7 @@
   "type": "module",
   "main": "index.js",
   "files": [
-    "src",
+    "contracts",
     "LICENSES",
     "THIRD_PARTY_NOTICES"
   ],
@@ -44,8 +44,8 @@
     "test": "npx hardhat test solidity",
     "snapshot": "npx hardhat test solidity --snapshot --grep-exclude testFuzz",
     "snapshot:check": "npx hardhat test solidity --snapshot-check --tolerance 5 --grep-exclude testFuzz",
-    "format": "prettier --write \"{src,test,script,examples}/**/*.sol\"",
-    "lint": "prettier --check \"{src,test,script,examples}/**/*.sol\""
+    "format": "prettier --write \"{contracts,test,script,examples}/**/*.sol\"",
+    "lint": "prettier --check \"{contracts,test,script,examples}/**/*.sol\""
   },
   "repository": {
     "type": "git",

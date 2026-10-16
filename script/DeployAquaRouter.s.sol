@@ -8,7 +8,7 @@ import { Script } from "forge-std/Script.sol";
 
 import { Config } from "./utils/Config.sol";
 
-import { AquaRouter } from "../src/AquaRouter.sol";
+import { AquaRouter } from "../contracts/AquaRouter.sol";
 
 // solhint-disable no-console
 import { console2 } from "forge-std/console2.sol";
