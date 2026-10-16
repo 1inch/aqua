@@ -23,6 +23,7 @@ Shared liquidity layer protocol enabling liquidity providers to allocate balance
   - [For Traders](#for-traders)
   - [For Developers](#for-developers)
 - [API Reference](#api-reference)
+- [Repository Structure](#repository-structure)
 - [Getting Started](#getting-started)
 
 ```
@@ -469,6 +470,20 @@ function _safeCheckAquaPush(
     uint256 expectedBalance
 ) internal view;
 ```
+
+## Repository Structure
+
+| Path | Contents |
+|---|---|
+| `src/` | Protocol contracts: `Aqua` (the shared liquidity registry), `AquaRouter` (the deployed entry point, which adds simulation, multicall and token rescue), the `AquaApp` base contract for strategy apps, the `IAqua` interface and the `BalanceLib` library |
+| `test/` | Solidity tests run by Hardhat, with a shared test base, an ERC-20 mock and test utilities |
+| `examples/` | `XYCSwap`, an example constant-product AMM built on `AquaApp`, with its callback interface and tests |
+| `script/` | `AquaRouter` deployment scripts for Foundry and Hardhat, and helpers that read deployment parameters from `config/` |
+| `ignition/` | The Hardhat Ignition module that deploys `AquaRouter` |
+| `config/` | Deployment parameters per chain: `constants.json` holds the router owner |
+| `docs/` | The Aqua 1.0 whitepaper (PDF) |
+| `LICENSES/` | Full licence texts for Aqua and the third-party code it uses |
+| `.github/` | GitHub Actions workflows: CI, tag, release and publish, and the Claude workflows |
 
 ## Getting Started
 
