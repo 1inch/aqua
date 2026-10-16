@@ -472,16 +472,21 @@ function _safeCheckAquaPush(
 
 ## Getting Started
 
+Requires Node.js and Yarn. The contracts build and test with Hardhat 3 and solc 0.8.30.
+
 ```bash
 # Clone repository
 git clone https://github.com/1inch/aqua
 cd aqua
 
 # Install dependencies
-forge install
+yarn install
+
+# Build contracts
+yarn build
 
 # Run tests
-forge test
+yarn test
 ```
 
 ## Deployments
