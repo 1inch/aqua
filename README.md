@@ -493,14 +493,7 @@ yarn test
 
 Aqua and the SwapVM router are deterministic deployments with the same address on every supported chain. Only interact with these two contracts. Anything else is not Aqua.
 
-| Contract | Address |
-|----------|---------|
-| Aqua (registry) | `0x1111113ccf1426a8e30e2bff5e005d929bf6a90a` |
-| SwapVM router | `0x111111338c5091e8440b67b168bae16a668ac0de` |
-
-### Supported Networks
-
-Ethereum Mainnet, Base, Optimism, Polygon, Arbitrum, Avalanche, Binance Smart Chain, Linea, Sonic, Unichain, Gnosis, zkSync, Robinhood, Cronos, Monad, HyperEVM
+The addresses on each supported network are listed in [deployments.md](deployments.md).
 
 
 ## License
