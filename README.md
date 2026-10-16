@@ -9,12 +9,11 @@
 
 [![Github Release](https://img.shields.io/github/v/tag/1inch/aqua?sort=semver&label=github)](https://github.com/1inch/aqua/releases/latest)
 [![CI](https://github.com/1inch/aqua/actions/workflows/ci.yml/badge.svg)](https://github.com/1inch/aqua/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/Coverage-61.54%25-yellow)](https://github.com/1inch/aqua)
 [![Tests](https://img.shields.io/github/actions/workflow/status/1inch/aqua/ci.yml?branch=main&label=tests)](https://github.com/1inch/aqua/actions)
 [![npm](https://img.shields.io/npm/v/@1inch/aqua.svg)](https://www.npmjs.com/package/@1inch/aqua)
 [![License](https://img.shields.io/badge/License-Degensoft--Aqua--Source--1.1-orange)](LICENSE)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.30-blue)](https://docs.soliditylang.org/en/v0.8.30/)
-[![Whitepaper](https://img.shields.io/badge/Whitepaper-Dev%20Preview-informational)](whitepaper/aqua-dev-preview.md)
+[![Whitepaper](https://img.shields.io/badge/Whitepaper-1.0-informational)](docs/whitepaper-aqua-1.0.pdf)
 
 Shared liquidity layer protocol enabling liquidity providers to allocate balances across multiple trading strategies without fragmentation.
 
