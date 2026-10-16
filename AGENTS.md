@@ -21,7 +21,7 @@ The commands to build and test this repository are in [the README's Getting Star
 | `contracts/` | Protocol contracts: `Aqua` (the shared liquidity registry), `AquaRouter` (the deployed entry point, which adds simulation, multicall and token rescue), the `AquaApp` base contract for strategy apps, the `IAqua` interface and the `BalanceLib` library |
 | `test/` | Solidity tests run by Hardhat, with a shared test base, an ERC-20 mock and test utilities |
 | `examples/` | `XYCSwap`, an example constant-product AMM built on `AquaApp`, with its callback interface and tests |
-| `script/` | `AquaRouter` deployment scripts for Foundry and Hardhat, and helpers that read deployment parameters from `config/` |
+| `script/` | The Hardhat script that deploys `AquaRouter` through the Ignition module, and a helper that reads the owner from `config/` |
 | `ignition/` | The Hardhat Ignition module that deploys `AquaRouter` |
 | `config/` | Deployment parameters per chain: `constants.json` holds the router owner |
 | `docs/` | The Aqua 1.0 whitepaper (PDF) |

@@ -34,14 +34,6 @@ Deploy with `hardhat ignition` through a wrapped script that injects the `owner`
 npx hardhat run ./script/deployAquaRouter.ts --network <network>
 ```
 
-### Automation Mode (Automated deployment framework)
-
-For automated deployments .env.automation file will be created automatically and deployment is launched with:
-
-```bash
-OPS_LAUNCH_MODE=auto make deploy-aqua-router
-```
-
 ### Deployment Artifacts
 
 Deployment information is saved in:
@@ -50,22 +42,12 @@ Deployment information is saved in:
 
 ## Helper Commands
 
-### Development Tools
-
-| Command         | Description                       |
-| --------------- | --------------------------------- |
-| `make build`    | Compile all contracts             |
-| `make tests`    | Run test suite with gas reporting |
-| `make coverage` | Generate code coverage report     |
-| `make snapshot` | Create gas snapshot               |
-| `make format`   | Format code using Forge formatter |
-| `make lint`     | Check code formatting             |
-| `make clean`    | Clean build artifacts             |
+Build and test commands are in [Getting Started in the README](README.md#getting-started).
 
 ### Local Development
 
 Start local development node fork:
 
 ```bash
-make node NODE_URL=<your-rpc-url>
+npx hardhat node --fork <your-rpc-url>
 ```

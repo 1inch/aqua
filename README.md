@@ -14,7 +14,6 @@
 [![npm](https://img.shields.io/npm/v/@1inch/aqua.svg)](https://www.npmjs.com/package/@1inch/aqua)
 [![License](https://img.shields.io/badge/License-Degensoft--Aqua--Source--1.1-orange)](LICENSE)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.30-blue)](https://docs.soliditylang.org/en/v0.8.30/)
-[![Foundry](https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg)](https://book.getfoundry.sh/)
 [![Whitepaper](https://img.shields.io/badge/Whitepaper-Dev%20Preview-informational)](whitepaper/aqua-dev-preview.md)
 
 Shared liquidity layer protocol enabling liquidity providers to allocate balances across multiple trading strategies without fragmentation.
@@ -483,7 +482,7 @@ function _safeCheckAquaPush(
 | `contracts/` | Protocol contracts: `Aqua` (the shared liquidity registry), `AquaRouter` (the deployed entry point, which adds simulation, multicall and token rescue), the `AquaApp` base contract for strategy apps, the `IAqua` interface and the `BalanceLib` library |
 | `test/` | Solidity tests run by Hardhat, with a shared test base, an ERC-20 mock and test utilities |
 | `examples/` | `XYCSwap`, an example constant-product AMM built on `AquaApp`, with its callback interface and tests |
-| `script/` | `AquaRouter` deployment scripts for Foundry and Hardhat, and helpers that read deployment parameters from `config/` |
+| `script/` | The Hardhat script that deploys `AquaRouter` through the Ignition module, and a helper that reads the owner from `config/` |
 | `ignition/` | The Hardhat Ignition module that deploys `AquaRouter` |
 | `config/` | Deployment parameters per chain: `constants.json` holds the router owner |
 | `docs/` | The Aqua 1.0 whitepaper (PDF) |
