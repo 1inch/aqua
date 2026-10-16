@@ -7,6 +7,7 @@ import hardhatVerify from "@nomicfoundation/hardhat-verify";
 const aquaCompilerSettings = {
   version: "0.8.30",
   settings: {
+    evmVersion: "prague",
     viaIR: true,
     optimizer: {
       enabled: true,
