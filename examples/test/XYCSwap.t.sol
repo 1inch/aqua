@@ -10,8 +10,8 @@ import { dynamic } from "test/utils/Dynamic.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import { Aqua } from "src/Aqua.sol";
-import { AquaApp } from "src/AquaApp.sol";
+import { Aqua } from "contracts/Aqua.sol";
+import { AquaApp } from "contracts/AquaApp.sol";
 import { XYCSwap, IXYCSwapCallback } from "examples/apps/XYCSwap.sol";
 
 // Mock ERC20 token for testing

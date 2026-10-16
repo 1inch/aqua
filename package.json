@@ -1,11 +1,11 @@
 {
   "name": "@1inch/aqua",
-  "version": "0.1.0",
+  "version": "1.0.1",
   "description": "Shared liquidity layer protocol",
   "type": "module",
   "main": "index.js",
   "files": [
-    "src",
+    "contracts",
     "LICENSES",
     "THIRD_PARTY_NOTICES"
   ],
@@ -16,11 +16,11 @@
     "test": "test"
   },
   "dependencies": {
-    "forge-std": "github:foundry-rs/forge-std#v1.11.0",
     "@1inch/solidity-utils": "6.9.9",
     "@openzeppelin/contracts": "5.4.0"
   },
   "devDependencies": {
+    "forge-std": "github:foundry-rs/forge-std#v1.11.0",
     "@nomicfoundation/hardhat-ignition-viem": "3.1.6",
     "@nomicfoundation/hardhat-ignition": "3.1.8",
     "@nomicfoundation/hardhat-keystore": "3.0.12",
@@ -44,8 +44,8 @@
     "test": "npx hardhat test solidity",
     "snapshot": "npx hardhat test solidity --snapshot --grep-exclude testFuzz",
     "snapshot:check": "npx hardhat test solidity --snapshot-check --tolerance 5 --grep-exclude testFuzz",
-    "format": "prettier --write \"{src,test,script,examples}/**/*.sol\"",
-    "lint": "prettier --check \"{src,test,script,examples}/**/*.sol\""
+    "format": "prettier --write \"{contracts,test,script,examples}/**/*.sol\"",
+    "lint": "prettier --check \"{contracts,test,script,examples}/**/*.sol\""
   },
   "repository": {
     "type": "git",
