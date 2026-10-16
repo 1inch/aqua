@@ -1,0 +1,20 @@
+name: PUBLISH
+
+on:
+  workflow_dispatch:
+    inputs:
+      pack-only:
+        description: Build the package without publishing it
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+
+jobs:
+  publish-npmjs:
+    uses: 1inch/ci-workflow-protocol/.github/workflows/publish.yml@v2.2.0
+    with:
+      pack-only: ${{ inputs.pack-only }}
