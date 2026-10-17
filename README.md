@@ -479,6 +479,7 @@ cd aqua
 
 # Install dependencies
 forge install
+yarn install
 
 # Run tests
 forge test
