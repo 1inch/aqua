@@ -1,0 +1,285 @@
+# Inlined copy of 1inch/workflows/.github/workflows/dependency-audit.yaml (dependency-audit-v1): this repository cannot call that private workflow.
+name: Dependency Audit
+
+on:
+  schedule:
+    - cron: "35 1 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: read
+    concurrency:
+      group: dependency-audit-${{ github.repository }}
+      cancel-in-progress: false
+    env:
+      BASE_BRANCH: main
+      BRANCH: feature/DPA2-6761_dependency-audit
+      TICKET: DPA2-6761
+      REPO: ${{ github.repository }}
+      TRIVY_VERSION: v0.76.0
+    steps:
+      - name: Require secrets
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          AUDIT_PAT: ${{ secrets.DEPENDENCY_AUDIT_PAT }}
+        run: |
+          missing=0
+          if [ -z "$CURSOR_API_KEY" ]; then
+            echo "::error::Secret CURSOR_API_KEY is not set"
+            missing=1
+          fi
+          if [ -z "$AUDIT_PAT" ]; then
+            echo "::error::Secret DEPENDENCY_AUDIT_PAT is not set"
+            missing=1
+          fi
+          exit "$missing"
+
+      - name: Checkout default branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.BASE_BRANCH }}
+          fetch-depth: 0
+          token: ${{ secrets.DEPENDENCY_AUDIT_PAT }}
+
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@v0.3.1
+        with:
+          version: ${{ env.TRIVY_VERSION }}
+
+      - name: Scan lockfiles
+        id: scan
+        run: |
+          critical_high_report="$RUNNER_TEMP/trivy-critical-high.json"
+          medium_low_report="$RUNNER_TEMP/trivy-medium-low.json"
+
+          trivy fs --scanners vuln --pkg-types library --severity CRITICAL,HIGH --ignore-unfixed \
+            --format json --output "$critical_high_report" .
+          trivy fs --skip-db-update --scanners vuln --pkg-types library --severity MEDIUM,LOW \
+            --format json --output "$medium_low_report" .
+
+          accepted_advisories=$(git ls-files | grep -E '(^|/)package\.json$' \
+            | xargs -r -d '\n' jq -r '.pnpm.auditConfig.ignoreGhsas[]?, .pnpm.auditConfig.ignoreCves[]?' 2>/dev/null \
+            | jq -R . | jq -sc 'unique')
+          count_findings() {
+            jq --argjson accepted "$accepted_advisories" \
+              '[.Results[]?.Vulnerabilities[]? | ([.VulnerabilityID] + (.VendorIDs // [])) as $ids | select(($ids - $accepted) == $ids)] | length' "$1"
+          }
+          critical_high=$(count_findings "$critical_high_report")
+          medium_low=$(count_findings "$medium_low_report")
+
+          echo "critical_high=$critical_high" >> "$GITHUB_OUTPUT"
+          {
+            echo "TRIVY_CRITICAL_HIGH_REPORT=$critical_high_report"
+            echo "TRIVY_MEDIUM_LOW_REPORT=$medium_low_report"
+            echo "ACCEPTED_ADVISORIES=$accepted_advisories"
+          } >> "$GITHUB_ENV"
+          {
+            echo "### Dependency audit"
+            echo ""
+            echo "| Severity | Findings |"
+            echo "| --- | --- |"
+            echo "| Critical and high, with a fixed version | $critical_high |"
+            echo "| Medium and low | $medium_low |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Detect toolchains
+        id: toolchains
+        if: steps.scan.outputs.critical_high != '0'
+        run: |
+          tracked() { git ls-files | grep -Eq "(^|/)$1\$"; }
+
+          node=false
+          pnpm=false
+          yarn=false
+          go=false
+          rust=false
+          if tracked 'pnpm-lock\.yaml'; then node=true; pnpm=true; fi
+          if tracked 'yarn\.lock'; then node=true; yarn=true; fi
+          if tracked 'package-lock\.json'; then node=true; fi
+          if tracked 'go\.mod'; then go=true; fi
+          if tracked 'Cargo\.lock'; then rust=true; fi
+
+          node_version_file=""
+          for candidate in .nvmrc .node-version; do
+            if [ -f "$candidate" ]; then
+              node_version_file="$candidate"
+              break
+            fi
+          done
+          if [ -z "$node_version_file" ] && [ -f package.json ] && jq -e '.volta.node // .engines.node' package.json >/dev/null; then
+            node_version_file=package.json
+          fi
+          node_version=""
+          if [ -z "$node_version_file" ]; then
+            node_version="lts/*"
+          fi
+
+          pnpm_version="10"
+          if [ -f package.json ]; then
+            if jq -e '(.packageManager // "") | startswith("pnpm@")' package.json >/dev/null; then
+              pnpm_version=""
+            else
+              pnpm_version=$(jq -r '.engines.pnpm // "10"' package.json)
+            fi
+          fi
+
+          go_version_file=""
+          if [ "$go" = true ]; then
+            if [ -f go.mod ]; then
+              go_version_file=go.mod
+            else
+              go_version_file=$(git ls-files | grep -E '(^|/)go\.mod$' | head -n 1)
+            fi
+          fi
+
+          {
+            echo "node=$node"
+            echo "pnpm=$pnpm"
+            echo "yarn=$yarn"
+            echo "go=$go"
+            echo "rust=$rust"
+            echo "node_version=$node_version"
+            echo "node_version_file=$node_version_file"
+            echo "pnpm_version=$pnpm_version"
+            echo "go_version_file=$go_version_file"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Setup pnpm
+        if: steps.toolchains.outputs.pnpm == 'true'
+        uses: pnpm/action-setup@v6
+        with:
+          version: ${{ steps.toolchains.outputs.pnpm_version }}
+
+      - name: Setup Node.js with the @1inch registry
+        if: steps.toolchains.outputs.node == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ steps.toolchains.outputs.node_version }}
+          node-version-file: ${{ steps.toolchains.outputs.node_version_file }}
+          registry-url: https://npm.pkg.github.com
+          scope: "@1inch"
+
+      - name: Enable Corepack for Yarn
+        if: steps.toolchains.outputs.yarn == 'true'
+        run: corepack enable
+
+      - name: Setup Go
+        if: steps.toolchains.outputs.go == 'true'
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: ${{ steps.toolchains.outputs.go_version_file }}
+          cache: false
+
+      - name: Setup Rust when cargo is missing
+        if: steps.toolchains.outputs.rust == 'true'
+        run: |
+          if ! command -v cargo >/dev/null; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+            echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          fi
+
+      - name: Install Cursor CLI and add ~/.local/bin to PATH for ARC runners
+        if: steps.scan.outputs.critical_high != '0'
+        run: |
+          curl https://cursor.com/install -fsS | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.local/bin:$PATH"
+          command -v agent >/dev/null || { echo "::error::Cursor CLI 'agent' not found in ~/.local/bin after install"; exit 1; }
+
+      - name: Configure git identity
+        if: steps.scan.outputs.critical_high != '0'
+        run: |
+          git config user.name "Cursor Agent"
+          git config user.email "cursoragent@cursor.com"
+
+      - name: Fix critical and high vulnerabilities
+        if: steps.scan.outputs.critical_high != '0'
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          GH_TOKEN: ${{ secrets.DEPENDENCY_AUDIT_PAT }}
+          NODE_AUTH_TOKEN: ${{ github.token }}
+          PROMPT: |
+            You are running in a GitHub Actions job that fixes dependency vulnerabilities. Read the environment variables named below with the shell.
+
+            The GitHub CLI `gh` is authenticated through `GH_TOKEN`, and `git push` to origin is authenticated. Node.js, pnpm, Yarn (through Corepack), Go and Rust are installed when the repository uses them, and the private `@1inch` npm registry is configured.
+
+            # Context
+            - Repository: `$REPO`
+            - Default branch, checked out now: `$BASE_BRANCH`
+            - Fix branch: `$BRANCH`
+            - Jira ticket: `$TICKET`
+            - Findings to fix: the Trivy JSON report at `$TRIVY_CRITICAL_HIGH_REPORT` (CRITICAL and HIGH, each with a fixed version)
+            - Findings to list only: the Trivy JSON report at `$TRIVY_MEDIUM_LOW_REPORT` (MEDIUM and LOW)
+
+            Each entry in `Results` has a `Target` (the lockfile path), and each of its `Vulnerabilities` has `PkgName`, `InstalledVersion`, `FixedVersion`, `VulnerabilityID` and `Severity`.
+
+            # Security exceptions
+            If `SECURITY_EXCEPTIONS.md` exists in the repository root, read it first. Skip every package it lists as an accepted risk: do not fix it and do not count it as unresolved. Mention it in the pull request body as "excepted per SECURITY_EXCEPTIONS.md".
+
+            `$ACCEPTED_ADVISORIES` is a JSON list of advisory IDs from `pnpm.auditConfig.ignoreGhsas` and `ignoreCves` in the repository's `package.json` files. Treat a finding whose `VulnerabilityID` or any of its `VendorIDs` is in that list as an accepted risk in the same way, and mention it in the pull request body as "excepted per pnpm.auditConfig". Trivy already applies `.trivyignore`.
+
+            # How to fix each CRITICAL or HIGH finding
+            Work in the directory of the lockfile named in `Target`. Use the first option that works:
+            1. Bump the direct dependency in that directory's manifest (`package.json`, `go.mod` or `Cargo.toml`) to a version that pulls in `FixedVersion`.
+            2. Only when no parent bump reaches `FixedVersion`: add an override (`pnpm.overrides`, npm `overrides`, Yarn `resolutions`, `go get <module>@<version>`, or `cargo update -p <crate> --precise <version>`) and explain why in the commit message and the pull request body.
+
+            Regenerate the lockfile with the tool that owns it, in the same directory:
+            - `pnpm-lock.yaml`: `pnpm install --no-frozen-lockfile`
+            - `package-lock.json`: `npm install --package-lock-only`
+            - `yarn.lock`: `yarn install`
+            - `go.mod`: `go mod tidy`
+            - `Cargo.lock`: `cargo update -p <crate>`
+
+            Every lockfile is independent: never fix a nested lockfile from the root manifest.
+
+            After fixing, scan the same directory again and repeat until its CRITICAL and HIGH findings are gone or cannot be fixed:
+            `trivy fs --skip-db-update --scanners vuln --pkg-types library --severity CRITICAL,HIGH --ignore-unfixed <directory>`
+
+            # Scope
+            - Fix only the CRITICAL and HIGH findings from the report.
+            - Do not fix MEDIUM or LOW findings; list them in the pull request body.
+            - Do not change anything unrelated to these findings, and never edit files under `.github/workflows/`.
+            - Do not run `pnpm audit`, `npm audit` or `yarn audit`.
+
+            # Branch
+            1. If `$BRANCH` exists on origin (`git ls-remote --exit-code --heads origin "$BRANCH"`): fetch it, check it out and rebase it onto `origin/$BASE_BRANCH`. Never delete or recreate it.
+            2. Otherwise create it from `origin/$BASE_BRANCH`.
+            3. Commit with the message `fix($TICKET): resolve critical and high dependency vulnerabilities` and push with `git push --force-with-lease origin "$BRANCH"`. Never use `git push --force`.
+
+            # Pull request
+            Keep exactly one open pull request from `$BRANCH` into `$BASE_BRANCH`:
+            - If `gh pr list --head "$BRANCH" --base "$BASE_BRANCH" --state open --json number` returns one, update its body with `gh pr edit`. Never create a second one.
+            - Otherwise create it with `gh pr create --base "$BASE_BRANCH" --head "$BRANCH" --title "fix($TICKET): resolve critical and high dependency vulnerabilities"`.
+
+            The pull request body must contain:
+            - `Tracked in $TICKET.`
+            - A table with the columns Lockfile, Package, Installed, Fixed, Advisory, Severity, Fix applied.
+            - Whether every CRITICAL and HIGH finding is resolved, and the reason for each one that is not.
+            - The MEDIUM and LOW findings in a collapsed `<details>` list.
+
+            If nothing needs changing because every finding is excepted, do not push and do not open a pull request.
+
+            # Result
+            Finish by writing exactly one of these lines to `$GITHUB_ENV`:
+            - `echo "UNRESOLVED_CRITICAL_HIGH=true" >> "$GITHUB_ENV"` when any CRITICAL or HIGH finding that is not excepted remains.
+            - `echo "UNRESOLVED_CRITICAL_HIGH=false" >> "$GITHUB_ENV"` otherwise.
+        run: agent -p "$PROMPT" --force --model grok-4.7-high --output-format=text
+
+      - name: Fail if critical or high vulnerabilities remain
+        if: steps.scan.outputs.critical_high != '0'
+        run: |
+          if [ "${UNRESOLVED_CRITICAL_HIGH:-true}" != "false" ]; then
+            echo "::error::Critical or high vulnerabilities remain unresolved. See the open pull request from $BRANCH."
+            exit 1
+          fi
+          echo "No unresolved critical or high vulnerabilities."
