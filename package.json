@@ -1,6 +1,6 @@
 {
   "name": "@1inch/aqua",
-  "version": "1.0.1",
+  "version": "1.0.2-rc.1",
   "description": "Shared liquidity layer protocol",
   "type": "module",
   "main": "index.js",
@@ -16,8 +16,8 @@
     "test": "test"
   },
   "dependencies": {
-    "@1inch/solidity-utils": "6.9.9",
-    "@openzeppelin/contracts": "5.4.0"
+    "@1inch/solidity-utils": "7.0.2",
+    "@openzeppelin/contracts": "5.6.1"
   },
   "devDependencies": {
     "forge-std": "github:foundry-rs/forge-std#v1.11.0",
