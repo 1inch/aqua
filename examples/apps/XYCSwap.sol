@@ -6,9 +6,9 @@ pragma solidity 0.8.30;
 
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
-import { IAqua } from "../../src/interfaces/IAqua.sol";
+import { IAqua } from "../../contracts/interfaces/IAqua.sol";
 import { IXYCSwapCallback } from "../apps/interfaces/IXYCSwapCallback.sol";
-import { AquaApp } from "../../src/AquaApp.sol";
+import { AquaApp } from "../../contracts/AquaApp.sol";
 
 /// @title XYCSwap - Example constant product AMM implementation using Aqua
 /// @notice Demonstrates how to build a swap app on top of Aqua protocol

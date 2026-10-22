@@ -17,6 +17,6 @@ jobs:
     uses: 1inch/ci-workflow-protocol/.github/workflows/hardhat-ci.yml@v2.2.0
     with:
       profile: default
-      sources: src
+      sources: contracts
       snapshot: true
       lint: true

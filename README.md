@@ -1,16 +1,19 @@
+<div align="center">
+    <img src="https://raw.githubusercontent.com/1inch/aqua/main/.github/1inch_github_w.svg#gh-light-mode-only" alt="1inch">
+    <img src="https://raw.githubusercontent.com/1inch/aqua/main/.github/1inch_github_b.svg#gh-dark-mode-only" alt="1inch">
+</div>
+
 # Aqua Protocol
 
 **Release flow:** `main` for development, one `release/X.Y.Z` branch per release, tags `vX.Y.Z` set by the `TAG` workflow — see [RELEASE_FLOW.md](https://github.com/1inch/ci-workflow-protocol/blob/main/RELEASE_FLOW.md).
 
 [![Github Release](https://img.shields.io/github/v/tag/1inch/aqua?sort=semver&label=github)](https://github.com/1inch/aqua/releases/latest)
 [![CI](https://github.com/1inch/aqua/actions/workflows/ci.yml/badge.svg)](https://github.com/1inch/aqua/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/Coverage-61.54%25-yellow)](https://github.com/1inch/aqua)
 [![Tests](https://img.shields.io/github/actions/workflow/status/1inch/aqua/ci.yml?branch=main&label=tests)](https://github.com/1inch/aqua/actions)
 [![npm](https://img.shields.io/npm/v/@1inch/aqua.svg)](https://www.npmjs.com/package/@1inch/aqua)
 [![License](https://img.shields.io/badge/License-Degensoft--Aqua--Source--1.1-orange)](LICENSE)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.30-blue)](https://docs.soliditylang.org/en/v0.8.30/)
-[![Foundry](https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg)](https://book.getfoundry.sh/)
-[![Whitepaper](https://img.shields.io/badge/Whitepaper-Dev%20Preview-informational)](whitepaper/aqua-dev-preview.md)
+[![Whitepaper](https://img.shields.io/badge/Whitepaper-1.0-informational)](docs/whitepaper-aqua-1.0.pdf)
 
 Shared liquidity layer protocol enabling liquidity providers to allocate balances across multiple trading strategies without fragmentation.
 
@@ -23,6 +26,7 @@ Shared liquidity layer protocol enabling liquidity providers to allocate balance
   - [For Traders](#for-traders)
   - [For Developers](#for-developers)
 - [API Reference](#api-reference)
+- [Repository Structure](#repository-structure)
 - [Getting Started](#getting-started)
 
 ```
@@ -470,7 +474,23 @@ function _safeCheckAquaPush(
 ) internal view;
 ```
 
+## Repository Structure
+
+| Path | Contents |
+|---|---|
+| `contracts/` | Protocol contracts: `Aqua` (the shared liquidity registry), `AquaRouter` (the deployed entry point, which adds simulation, multicall and token rescue), the `AquaApp` base contract for strategy apps, the `IAqua` interface and the `BalanceLib` library |
+| `test/` | Solidity tests run by Hardhat, with a shared test base, an ERC-20 mock and test utilities |
+| `examples/` | `XYCSwap`, an example constant-product AMM built on `AquaApp`, with its callback interface and tests |
+| `script/` | The Hardhat script that deploys `AquaRouter` through the Ignition module, and a helper that reads the owner from `config/` |
+| `ignition/` | The Hardhat Ignition module that deploys `AquaRouter` |
+| `config/` | Deployment parameters per chain: `constants.json` holds the router owner |
+| `docs/` | The Aqua 1.0 whitepaper (PDF) |
+| `LICENSES/` | Full licence texts for Aqua and the third-party code it uses |
+| `.github/` | GitHub Actions workflows: CI, tag, release and publish, and the Claude workflows |
+
 ## Getting Started
+
+Requires Node.js and Yarn. The contracts build and test with Hardhat 3 and solc 0.8.30.
 
 ```bash
 # Clone repository
@@ -478,24 +498,20 @@ git clone https://github.com/1inch/aqua
 cd aqua
 
 # Install dependencies
-forge install
+yarn install
+
+# Build contracts
+yarn build
 
 # Run tests
-forge test
+yarn test
 ```
 
 ## Deployments
 
 Aqua and the SwapVM router are deterministic deployments with the same address on every supported chain. Only interact with these two contracts. Anything else is not Aqua.
 
-| Contract | Address |
-|----------|---------|
-| Aqua (registry) | `0x1111113ccf1426a8e30e2bff5e005d929bf6a90a` |
-| SwapVM router | `0x111111338c5091e8440b67b168bae16a668ac0de` |
-
-### Supported Networks
-
-Ethereum Mainnet, Base, Optimism, Polygon, Arbitrum, Avalanche, Binance Smart Chain, Linea, Sonic, Unichain, Gnosis, zkSync, Robinhood, Cronos, Monad, HyperEVM
+The addresses on each supported network are listed in [deployments.md](deployments.md).
 
 
 ## License
