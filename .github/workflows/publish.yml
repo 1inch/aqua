@@ -15,6 +15,6 @@ permissions:
 
 jobs:
   publish-npmjs:
-    uses: 1inch/ci-workflow-protocol/.github/workflows/publish.yml@v2.2.0
+    uses: 1inch/ci-workflow-protocol/.github/workflows/publish.yml@v2.3.0
     with:
       pack-only: ${{ inputs.pack-only }}
