@@ -35,7 +35,6 @@
   },
   "resolutions": {
     "elliptic": "6.6.1",
-    "@openzeppelin/contracts": "5.4.0",
     "viem/@noble/hashes": "1.8.0",
     "viem/@noble/curves/@noble/hashes": "1.8.0"
   },
