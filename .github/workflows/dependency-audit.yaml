@@ -31,7 +31,6 @@ jobs:
     env:
       BASE_BRANCH: main
       BRANCH: feature/DPA2-6761_weekday-caller
-      TICKET: DPA2-6761
       REPO: ${{ github.repository }}
       REPO_URL: ${{ github.server_url }}/${{ github.repository }}
       TRIVY_VERSION: v0.76.0
@@ -163,7 +162,7 @@ jobs:
           // Why the SDK instead of the Cursor CLI: the SDK creates a real cloud agent, so the run is
           // attributable. `cloud.metadata` tags the agent for its whole lifetime, and every usage and
           // billing export carries `cloud_agent_id`. That is what lets spend be reported per repository,
-          // per use case and per ticket instead of as one undifferentiated Cursor invoice line.
+          // per use case instead of as one undifferentiated Cursor invoice line.
           //
           // The fix work is delegated to a named subagent pinned to DeepSeek Flash: the scan already says
           // which package, which version and which lockfile, so the loop is mechanical and a large
@@ -176,6 +175,12 @@ jobs:
           import { appendFile, readFile } from "node:fs/promises";
           import { pathToFileURL } from "node:url";
           import { Agent } from "@cursor/sdk";
+
+          /**
+           * Title of the single fix pull request. A plain description, not a conventional commit with a
+           * ticket scope: this runs on a weekday schedule, so there is no ticket to reference.
+           */
+          const PR_TITLE = "Resolve critical and high dependency vulnerabilities";
 
           /** Model the fix subagent runs on. Fixed here; the workflow does not let callers override it. */
           const FIX_MODEL_ID = "deepseek-v4.1-flash-1017";
@@ -193,7 +198,6 @@ jobs:
             "REPO",
             "BASE_BRANCH",
             "BRANCH",
-            "TICKET",
             "TRIVY_CRITICAL_HIGH_REPORT",
             "TRIVY_MEDIUM_LOW_REPORT",
             "ACCEPTED_ADVISORIES"
@@ -216,7 +220,6 @@ jobs:
             return {
               repository: env.REPO,
               usecase: "dependency-update",
-              ticket: env.TICKET,
               workflow: "dependency-audit",
               base_branch: env.BASE_BRANCH,
               fix_branch: env.BRANCH,
@@ -308,7 +311,6 @@ jobs:
           - Repository: \`${env.REPO}\`
           - Default branch: \`${env.BASE_BRANCH}\`
           - Fix branch: \`${env.BRANCH}\`
-          - Jira ticket: \`${env.TICKET}\`
           - CRITICAL and HIGH findings, each with a fixed version: the JSON array in \`$FINDINGS_CRITICAL_HIGH\`
           - MEDIUM and LOW findings, to list only: the JSON array in \`$FINDINGS_MEDIUM_LOW\`
           - Advisory ids the repository already accepts: the JSON array in \`$ACCEPTED_ADVISORIES\`
@@ -352,7 +354,7 @@ jobs:
           # Branch
           1. If \`${env.BRANCH}\` exists on origin (\`git ls-remote --exit-code --heads origin "${env.BRANCH}"\`): fetch it, check it out and rebase it onto \`origin/${env.BASE_BRANCH}\`. Never delete or recreate it.
           2. Otherwise create it from \`origin/${env.BASE_BRANCH}\`.
-          3. Commit with the message \`fix(${env.TICKET}): resolve critical and high dependency vulnerabilities\` and push with \`git push --force-with-lease origin "${env.BRANCH}"\`. Never use \`git push --force\`.
+          3. Commit with the message \`fix(deps): resolve critical and high dependency vulnerabilities\` and push with \`git push --force-with-lease origin "${env.BRANCH}"\`. Never use \`git push --force\`. This is a scheduled job with no Jira ticket, so the commit scope is \`deps\`.
 
           # Pull request
           This run opens the pull request for you from \`${env.BRANCH}\` into \`${env.BASE_BRANCH}\`, so do not call \`gh pr create\`. What is left to you is its description:
@@ -361,7 +363,6 @@ jobs:
           - Otherwise write the description to a file and leave it; report its path in your final answer and the workflow will set it on the pull request this run opens.
 
           The body must contain:
-          - \`Tracked in ${env.TICKET}.\`
           - A table with the columns Lockfile, Package, Installed, Fixed, Advisory, Severity, Fix applied.
           - Whether every CRITICAL and HIGH finding is resolved, and the reason for each one that is not.
           - The MEDIUM and LOW findings in a collapsed \`<details>\` list.
@@ -408,14 +409,13 @@ jobs:
           /**
            * Builds the job-summary markdown. Pure, so tests can assert on it without a network call.
            */
-          function buildReport({ repo, ticket, branch, agentId, modelId, result, usage }) {
+          function buildReport({ repo, branch, agentId, modelId, result, usage }) {
             const lines = [
               "### Dependency audit fix agent",
               "",
               "| Field | Value |",
               "| --- | --- |",
               `| Repository | \`${repo}\` |`,
-              `| Ticket | \`${ticket}\` |`,
               `| Branch | \`${branch}\` |`,
               `| Cloud agent | \`${agentId}\` |`,
               `| Fix subagent model | \`${modelId}\` |`,
@@ -444,7 +444,7 @@ jobs:
 
             lines.push(
               "",
-              `The tags on cloud agent \`${agentId}\` are what let usage and billing exports be joined to the repository, the use case and the ticket.`
+              `The tags on cloud agent \`${agentId}\` are what let usage and billing exports be joined to the repository and the use case.`
             );
             return lines.join("\n");
           }
@@ -483,23 +483,36 @@ jobs:
           }
 
           /**
-           * Sets the body on the pull request this run opened. Best effort and never fatal: the fix is
-           * already pushed and the pull request already open, so a body that could not be set is a
-           * cosmetic miss, not a failed audit.
+           * Sets the title and body on the pull request this run opened. Best effort and never fatal: the
+           * fix is already pushed and the pull request already open, so a title or body that could not be
+           * set is a cosmetic miss, not a failed audit.
+           *
+           * The title is set here because the SDK names the pull request from the prompt, and a scheduled
+           * job has no ticket to put in a conventional-commit scope. The body is set only on a newly opened
+           * pull request: an existing one carries the agent's accumulated description.
            */
-          async function applyPullRequestBody({ repo, branch, bodyPath, pullRequestUrl, existedBefore, token }) {
-            if (!pullRequestUrl || existedBefore || !token) {
+          async function applyPullRequestDetails({ repo, branch, bodyPath, pullRequestUrl, existedBefore, token, title }) {
+            if (!pullRequestUrl || !token) {
               return;
             }
 
-            let body;
-            try {
-              body = await readFile(bodyPath, "utf8");
-            } catch {
-              return;
-            }
             const number = pullRequestUrl.match(/\/pull\/(\d+)$/)?.[1];
             if (!number) {
+              return;
+            }
+
+            const payload = {};
+            if (title) {
+              payload.title = title;
+            }
+            if (!existedBefore) {
+              try {
+                payload.body = await readFile(bodyPath, "utf8");
+              } catch {
+                // A missing description is not worth failing the audit over.
+              }
+            }
+            if (Object.keys(payload).length === 0) {
               return;
             }
 
@@ -511,11 +524,11 @@ jobs:
                 "content-type": "application/json",
                 "user-agent": "dependency-audit"
               },
-              body: JSON.stringify({ body })
+              body: JSON.stringify(payload)
             });
 
             if (!response.ok) {
-              process.stdout.write(`could not set the pull request body on ${branch}: HTTP ${response.status}\n`);
+              process.stdout.write(`could not set the pull request details on ${branch}: HTTP ${response.status}\n`);
             }
           }
 
@@ -627,13 +640,14 @@ jobs:
               // an existing pull request's body is the agent's to maintain, and overwriting it every
               // weekday would erase the accumulated history of what it already fixed.
               const bodyPath = `${process.env.RUNNER_TEMP ?? process.cwd()}/dependency-audit-pr-body.md`;
-              await applyPullRequestBody({
+              await applyPullRequestDetails({
                 repo: env.REPO,
                 branch: env.BRANCH,
                 bodyPath,
                 pullRequestUrl: collected.pullRequestUrl,
                 existedBefore: env.PR_EXISTED_BEFORE === "true",
-                token: env.GITHUB_TOKEN
+                token: env.GITHUB_TOKEN,
+                title: PR_TITLE
               });
 
               const outputs = [
@@ -652,7 +666,6 @@ jobs:
                 env.GITHUB_STEP_SUMMARY ?? "/dev/null",
                 `${buildReport({
                   repo: env.REPO,
-                  ticket: env.TICKET,
                   branch: env.BRANCH,
                   agentId: agent.agentId,
                   modelId: FIX_MODEL_ID,
@@ -673,8 +686,9 @@ jobs:
           export {
             FIX_MODEL_ID,
             MAX_FINDINGS_BYTES,
+            PR_TITLE,
             agentMetadata,
-            applyPullRequestBody,
+            applyPullRequestDetails,
             buildFindingsPayload,
             buildPrompt,
             buildReport,
