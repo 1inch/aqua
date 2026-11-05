@@ -1,0 +1,9 @@
+{
+  "name": "dependency-audit-sdk",
+  "private": true,
+  "version": "1.0.0",
+  "dependencies": {
+    "@cursor/sdk": "1.2.0"
+  },
+  "description": "Pinned Cursor SDK graph for the dependency-audit-agent action. Installed with npm ci --ignore-scripts."
+}
