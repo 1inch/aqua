@@ -27,4 +27,19 @@ contract AquaRouterTest is Test {
         assertEq(token.balanceOf(owner), amount);
         assertEq(token.balanceOf(address(router)), 0);
     }
+    function test_RescueFundsERC20RevertsForNonOwner() public {
+    address owner = address(0xBEEF);
+    address attacker = address(0xBAD);
+    AquaRouter router = new AquaRouter(owner);
+    MockToken token = new MockToken("Stuck");
+
+    uint256 amount = 100e18;
+    token.transfer(address(router), amount);
+
+    vm.prank(attacker);
+    vm.expectRevert();
+    router.rescueFunds(IERC20(address(token)), amount);
+
+    assertEq(token.balanceOf(address(router)), amount);
+ }
 }
