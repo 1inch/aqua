@@ -20,9 +20,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     permissions:
-      # `contents: write` + `pull-requests: write` are only for the job's own `GITHUB_TOKEN`, which
-      # sets the body of the pull request the agent app opened. Nothing pushes with it.
-      contents: write
+      # No write scope on contents: the Cursor GitHub App does the pushing, so the job token cannot
+      # move a branch. `pull-requests: write` is only for the title and body on the fix PR, and
+      # `packages: read` is what lets the agent install private `@1inch` packages. This token is
+      # also the one forwarded to the agent, so keeping it to the minimum matters.
+      contents: read
       pull-requests: write
       packages: read
     concurrency:
@@ -30,7 +32,7 @@ jobs:
       cancel-in-progress: false
     env:
       BASE_BRANCH: main
-      BRANCH: feature/DPA2-6761_weekday-caller
+      BRANCH: feature/DPA2-0000_dependency-audit
       REPO: ${{ github.repository }}
       REPO_URL: ${{ github.server_url }}/${{ github.repository }}
       TRIVY_VERSION: v0.76.0
@@ -50,8 +52,8 @@ jobs:
         with:
           ref: ${{ env.BASE_BRANCH }}
           fetch-depth: 0
-          # The job token is only for `gh pr list` and setting the PR body. Leaving it in
-          # `.git/config` would hand the agent's tooling a write credential it does not need.
+          # The job token is read-only on contents now, but it is still a credential the agent's
+          # shell has no use for; keep it out of `.git/config`.
           persist-credentials: false
 
       - name: Install Trivy
@@ -74,9 +76,17 @@ jobs:
           trivy fs --exit-code 0 --skip-db-update --scanners vuln --pkg-types library --severity MEDIUM,LOW \
             --format json --output "$medium_low_report" .
 
-          accepted_advisories=$(git ls-files | grep -E '(^|/)package\.json$' \
-            | xargs -r -d '\n' jq -r '.pnpm.auditConfig.ignoreGhsas[]?, .pnpm.auditConfig.ignoreCves[]?' 2>/dev/null \
-            | jq -R . | jq -sc 'unique')
+          # `grep` exits 1 when the tree has no package.json. Under `set -o pipefail` that
+          # failed this assignment and the step. A repository with no Node manifests
+          # (analytics) has simply accepted nothing.
+          package_jsons=$(git ls-files | grep -E '(^|/)package\.json$' || true)
+          if [ -z "$package_jsons" ]; then
+            accepted_advisories='[]'
+          else
+            accepted_advisories=$(printf '%s\n' "$package_jsons" \
+              | xargs -d '\n' jq -r '.pnpm.auditConfig.ignoreGhsas[]?, .pnpm.auditConfig.ignoreCves[]?' \
+              | jq -R . | jq -sc 'unique')
+          fi
           count_findings() {
             jq --argjson accepted "$accepted_advisories" \
               '[.Results[]?.Vulnerabilities[]? | ([.VulnerabilityID] + (.VendorIDs // [])) as $ids | select(($ids - $accepted) == $ids)] | length' "$1"
@@ -146,21 +156,48 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # The SDK opens the pull request, and only a newly opened one should have its body set by
-          # this job. An existing one carries the agent's accumulated description, which the agent
-          # maintains itself.
-          number=$(gh pr list --head "$BRANCH" --base "$BASE_BRANCH" --state open --json number --jq '.[0].number // empty') || number=""
-          if [ -n "$number" ]; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "Fix pull request #$number already exists; the agent updates its body."
+          # The SDK opens a pull request on a fresh `cursor/` branch by default, which would leave a
+          # new one every weekday. Handing it the open pull request keeps the agent on the branch
+          # that already backs it.
+          #
+          # `--head` matches the branch *name* and includes pull requests from forks, ordered
+          # newest-first, so a fork PR whose head happens to be called `$BRANCH` would win and the
+          # agent would be pointed at someone else's branch. Select on `isCrossRepository` so only a
+          # branch in this repository can be chosen.
+          json=$(gh pr list --head "$BRANCH" --base "$BASE_BRANCH" --state open \
+            --json url,isCrossRepository,headRepositoryOwner --limit 100) || json="[]"
+          # `--arg` passes the owner in as a variable; a trailing `REPO=...` would be read as an
+          # input filename, jq would exit non-zero, and the `|| url=""` fallback would silently
+          # report "no PR" on every run — which is how a new pull request got opened each weekday.
+          owner="${REPO%%/*}"
+          url=$(printf '%s' "$json" | jq -r --arg owner "$owner" '
+            [ .[] | select(.isCrossRepository == false)
+                  | select(.headRepositoryOwner.login == $owner) ]
+            | .[0].url // empty')
+          jq_status=$?
+          if [ "$jq_status" -ne 0 ]; then
+            echo "::error::could not read the fix pull request list (jq exit $jq_status)"
+            exit "$jq_status"
+          fi
+
+          if [ -n "$url" ]; then
+            echo "url=$url" >> "$GITHUB_OUTPUT"
+            echo "Fix pull request already open: $url"
           else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "url=" >> "$GITHUB_OUTPUT"
+            echo "No fix pull request in this repository yet; this run opens one."
           fi
 
       - name: Run the fix agent through the Cursor SDK
         id: agent
         if: steps.scan.outputs.critical_high != '0'
         uses: ./.github/actions/dependency-audit-agent
+        env:
+          # node24 does not copy a secret `with:` input into the action process. The shell step
+          # above sees this same org secret through `env:`; the action reads that channel too.
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+          NPM_TOKEN: ${{ github.token }}
         with:
           cursor-api-key: ${{ secrets.CURSOR_API_KEY }}
           repository: ${{ env.REPO }}
@@ -172,17 +209,165 @@ jobs:
           accepted-advisories: ${{ steps.scan.outputs.accepted_advisories }}
           toolchains: ${{ steps.toolchains.outputs.toolchains }}
           runner-label: ubuntu-latest
-          pull-request-existed-before: ${{ steps.existing_pr.outputs.exists }}
+          existing-pull-request-url: ${{ steps.existing_pr.outputs.url }}
           github-token: ${{ github.token }}
+          npm-token: ${{ github.token }}
+      - name: Re-scan the fixed branch on this runner
+        id: rescan
+        if: steps.scan.outputs.critical_high != '0' && steps.agent.outputs.pull-request-url != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # The agent's own re-scan runs inside its VM with a binary it installed, so it cannot be
+          # the only gate on a run that pushes a branch: a compromised agent could report clean.
+          # This re-scans the pushed branch here, with the Trivy release the runner already
+          # installed, so the verdict that gates the job comes from trusted tooling.
+          set -euo pipefail
+          branch_sha=$(gh api "repos/$REPO/git/ref/heads/$BRANCH" --jq '.object.sha')
+
+          # The checkout runs with `persist-credentials: false`, so git has no credential here —
+          # `GH_TOKEN` authenticates `gh`, not `git`. Fetch through an explicit authenticated
+          # remote; the token never reaches `.git/config` because only this command sees it.
+          auth_url="https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git"
+          # Full history of the branch, not `--depth=1`: the credential scan below has to see every
+          # commit reachable from the tip. With a shallow fetch, a token added in one commit and
+          # deleted in the next is invisible — the tip tree is clean and the parent blob is still
+          # public on the branch.
+          git fetch --no-tags "$auth_url" "+refs/heads/$BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH"
+          git fetch --no-tags "$auth_url" "+refs/heads/$BRANCH:refs/remotes/origin/$BRANCH"
+          worktree="$RUNNER_TEMP/rescan"
+          rm -rf "$worktree"
+          # Git LFS would download every pointer, and this step has no git credential: the token
+          # is only on the fetch URL above. `GIT_LFS_SKIP_SMUDGE` is not enough once `git lfs
+          # install` has registered a process filter, which still starts and fails closed.
+          # Replace that filter with `cat` so the worktree keeps the pointer. Trivy reads
+          # lockfiles, not those blobs. Stdout stays visible: the previous redirect hid the
+          # checkout error.
+          git -c filter.lfs.required=false \
+            -c filter.lfs.process= \
+            -c filter.lfs.smudge=cat \
+            -c filter.lfs.clean=cat \
+            worktree add --detach "$worktree" "$branch_sha"
+
+          cd "$worktree"
+
+          # The agent is told not to write under `.github/`. See the gap noted at the top of this
+          # file: this comparison runs after the App has already pushed, so it cannot stop GitHub
+          # from scheduling a workflow in that commit. It still fails the job when those paths
+          # differ from the base branch, because a dependency fix has no reason to change them.
+          # The fix branch always *contains* the repository's workflows, so what matters is whether
+          # any content changed. The trees are filtered to that path and written to files — a full
+          # recursive tree is megabytes, well past the per-argument limit that `jq --argjson` would hit.
+          base_sha=$(gh api "repos/$REPO/git/ref/heads/$BASE_BRANCH" --jq '.object.sha')
+          tree_paths() {
+            gh api "repos/$REPO/git/trees/$1?recursive=1" \
+              | jq -r '.tree[] | select(.type == "blob") | select(.path | test("^\\.github/(workflows|actions)/")) | "\(.path) \(.sha)"' \
+              | sort > "$2"
+          }
+          tree_paths "$branch_sha" "$RUNNER_TEMP/head-tree.txt"
+          tree_paths "$base_sha" "$RUNNER_TEMP/base-tree.txt"
+
+          if ! diff -q "$RUNNER_TEMP/base-tree.txt" "$RUNNER_TEMP/head-tree.txt" >/dev/null; then
+            echo "Changed workflow/action paths:"
+            diff "$RUNNER_TEMP/base-tree.txt" "$RUNNER_TEMP/head-tree.txt" | head -20 || true
+            echo "::error::The pushed branch modifies .github/workflows or .github/actions. That is never a dependency fix; nothing in this job may introduce executable CI."
+            # Deleting the ref would need `contents: write`, which this job deliberately does not
+            # have — the agent holds the push, not the job. So the attempt is made and its failure is
+            # reported as an action item rather than swallowed, because the branch still exists and
+            # the next weekday run would rebase onto it and push it again.
+            if gh api --method DELETE "repos/$REPO/git/refs/heads/$BRANCH" 2>/dev/null; then
+              echo "Deleted $BRANCH."
+            else
+              echo "::error::MANUAL ACTION REQUIRED: delete the branch $BRANCH. The job token is contents: read, so this workflow cannot. Until it is deleted, the changed workflow file stays on the branch and runs on push."
+            fi
+            exit 1
+          fi
+
+          # A prompt instruction is not a control. The agent is told to keep the registry token out
+          # of the tree, but this checks what it actually pushed.
+          #
+          # Every commit, not just the tip: a token added in one commit and deleted in the next
+          # leaves a clean tip tree and a public parent blob. A net `git diff base..tip` hides the
+          # same add-then-delete, so the scan walks each commit's own diff.
+          credential_re='npm\.pkg\.github\.com/:_authToken=[^$[:space:]]|(ghp_|ghs_|gho_|ghu_|ghr_|github_pat_|crsr_)[A-Za-z0-9_]{16,}'
+          leaked=''
+          # `git show | grep -q` under pipefail drops a real hit. grep -q exits 0 at the first
+          # match and closes the pipe; git show is still writing a lockfile-sized diff, dies
+          # with SIGPIPE (141), and pipefail makes the pipeline look like a miss.
+          for c in $(git rev-list "refs/remotes/origin/$BASE_BRANCH..$branch_sha"); do
+            git show --format= --unified=0 "$c" > "$RUNNER_TEMP/commit.diff"
+            if grep -qE "$credential_re" "$RUNNER_TEMP/commit.diff"; then
+              leaked="$c"
+              break
+            fi
+          done
+          if [ -n "$leaked" ]; then
+            echo "::error::Commit $leaked on $BRANCH introduces a credential. Every commit on the branch is scanned, not just the tip. Refusing to accept it."
+            exit 1
+          fi
+          # The tip worktree is scanned too, for a token that arrived some other way.
+          if grep -rqE "$credential_re" . 2>/dev/null; then
+            echo "::error::The pushed branch contains a credential in its tip tree. Refusing to accept it."
+            exit 1
+          fi
+          # `pnpm.auditConfig` covers the IDs a repository has accepted in its manifests. `SECURITY_EXCEPTIONS.md`
+          # records the rest as "Affected package: `<name>`" — the agent honours it, so this gate must too,
+          # or a run that both fixes and excepts would fail here after the agent did the right thing.
+          # `grep` exits 1 when the tree has no package.json. This step sets
+          # `pipefail`, so that exit used to fail the re-scan after a good agent run
+          # on a repository with no Node manifests. An empty list is the right result.
+          package_jsons=$(git ls-files | grep -E '(^|/)package\.json$' || true)
+          if [ -z "$package_jsons" ]; then
+            accepted_advisories='[]'
+          else
+            accepted_advisories=$(printf '%s\n' "$package_jsons" \
+              | xargs -d '\n' jq -r '.pnpm.auditConfig.ignoreGhsas[]?, .pnpm.auditConfig.ignoreCves[]?' \
+              | jq -R . | jq -sc 'unique')
+          fi
+          excepted_packages='[]'
+          if [ -f SECURITY_EXCEPTIONS.md ]; then
+            # Entries read `Affected package:** \`name\``, sometimes with an `@version` suffix.
+            # Trivy reports the bare package name, so the version is stripped before matching.
+            #
+            # The extraction runs in one `jq -R` over the whole file rather than a `grep | grep`
+            # pipeline: the first `grep` exits 1 when a file exists but lists no exceptions, and
+            # under `set -euo pipefail` that failed the whole re-scan after a good agent run.
+            excepted_packages=$(jq -Rn '
+              [ inputs | match("Affected package:[^`]*`(?<pkg>[^`]+)`").captures[].string
+                       | split(" ")[0] | sub("@[^@/]*$"; "") ] | unique' SECURITY_EXCEPTIONS.md)
+          fi
+          echo "Excepted packages: $excepted_packages"
+
+          report="$RUNNER_TEMP/trivy-rescan.json"
+          trivy fs --exit-code 0 --scanners vuln --pkg-types library --severity CRITICAL,HIGH \
+            --ignore-unfixed --format json --output "$report" .
+
+          remaining=$(jq --argjson accepted "$accepted_advisories" --argjson excepted "$excepted_packages" \
+            '[.Results[]?.Vulnerabilities[]?
+              | ([.VulnerabilityID] + (.VendorIDs // [])) as $ids
+              | select(($ids - $accepted) == $ids)
+              | select(([.PkgName] - $excepted) == [.PkgName])] | length' "$report")
+          echo "critical_high=$remaining" >> "$GITHUB_OUTPUT"
+          echo "Re-scan of $branch_sha found $remaining unexcepted critical/high findings."
+
       - name: Fail if critical or high vulnerabilities remain
         if: steps.scan.outputs.critical_high != '0'
         env:
           UNRESOLVED_CRITICAL_HIGH: ${{ steps.agent.outputs.unresolved-critical-high }}
+          RESCAN_CRITICAL_HIGH: ${{ steps.rescan.outputs.critical_high }}
+          PULL_REQUEST_URL: ${{ steps.agent.outputs.pull-request-url }}
         run: |
           # The action treats a run that did not finish, or that ended without a readable verdict,
           # as unresolved — so an empty output means the step died, and that must fail too.
           if [ "${UNRESOLVED_CRITICAL_HIGH:-true}" != "false" ]; then
             echo "::error::Critical or high vulnerabilities remain unresolved. See the open pull request from $BRANCH."
+            exit 1
+          fi
+          # And the agent's verdict is not the last word: when it pushed a branch, this runner
+          # re-scanned that branch with its own pinned Trivy. A green verdict over a branch that
+          # still carries findings is a contradiction, and a reason to fail rather than merge it.
+          if [ -n "$PULL_REQUEST_URL" ] && [ "${RESCAN_CRITICAL_HIGH:-unset}" != "0" ]; then
+            echo "::error::The agent reported no unresolved findings, but re-scanning ${PULL_REQUEST_URL} found ${RESCAN_CRITICAL_HIGH:-an unknown number of} critical/high findings."
             exit 1
           fi
           echo "No unresolved critical or high vulnerabilities."

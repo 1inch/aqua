@@ -12,7 +12,8 @@ description: |
   finish, or that ends without a readable verdict, is treated as unresolved.
 
   The clone, the push and the pull request all go through the Cursor GitHub App, which must be
-  installed on the target repository. No repository-write token is needed.
+  installed on the target repository. No repository-write token is needed; `npm-token` is only for
+  reading private packages, and `github-token` only for annotating the pull request.
 
   This action is consumed by `dependency-audit.yaml`. It exists as an action rather than as steps
   in that workflow so a public or internal repository — which cannot call a private reusable
@@ -52,22 +53,31 @@ inputs:
     description: The runner pool the job is using, recorded in the agent metadata tag.
     required: false
     default: "unknown"
-  pull-request-existed-before:
+  existing-pull-request-url:
     description: >-
-      `true` when a fix pull request was already open before this run. When false, the body of the
-      newly opened pull request is set from the agent's description.
+      URL of the fix pull request when one is already open. The agent is attached to it instead of
+      having a new `cursor/` branch and pull request opened, so the job keeps exactly one.
     required: false
-    default: "false"
+    default: ""
   github-token:
     description: >-
-      The job's own `GITHUB_TOKEN`, used only to set the body on a newly opened pull request. The
-      action does not push with it; the Cursor GitHub App owns the branch.
+      The job's own `GITHUB_TOKEN`, used only to set the title and description on the fix pull
+      request. The action does not push with it; the Cursor GitHub App owns the branch.
+    required: false
+    default: ""
+  npm-token:
+    description: >-
+      Token that can read GitHub Packages, forwarded to the agent so it can install private
+      `@1inch` packages while regenerating lockfiles. The Cursor GitHub App installation token
+      cannot read GitHub Packages. Pass a token with no write scope beyond packages: the agent's
+      shell can read it, and every install it runs is forced to `--ignore-scripts` so a dependency
+      lifecycle script cannot see it.
     required: false
     default: ""
 
 outputs:
   unresolved-critical-high:
-    description: `true` when a CRITICAL or HIGH finding that is not excepted is still unresolved.
+    description: "`true` when a CRITICAL or HIGH finding that is not excepted is still unresolved."
   pull-request-url:
     description: The fix pull request, when one was opened or already open.
   agent-id:
